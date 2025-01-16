@@ -71,7 +71,9 @@ class API:
             "x-originator-type": "web",
         }
 
-    def _login(self):
+    def login(self):
+        """Logs into the Fiat Cloud and caches the auth tokens"""
+
         r = self.sess.request(
             method="GET",
             url=LOGIN_URL + "/accounts.webSdkBootstrap",
@@ -135,13 +137,17 @@ class API:
         self.expire_time = creds['Expiration']
 
     def _refresh_token_if_needed(self):
+        """Checks if token is available and fresh, refreshes it otherwise"""
+
         if self.dev_mode:
             return
 
         if self.expire_time is None or datetime.datetime.now().astimezone() > self.expire_time - datetime.timedelta(minutes=5):
-            self._login()
+            self.login()
 
     def list_vehicles(self) -> list[dict]:
+        """Loads a list of vehicles with general info"""
+
         if self.dev_mode:
             with open("test_list.json") as f:
                 return json.load(f)['vehicles']
@@ -158,6 +164,8 @@ class API:
         ).json()['vehicles']
 
     def get_vehicle(self, vin: str) -> dict:
+        """Gets a more detailed info abount a vehicle with a given VIN"""
+
         if self.dev_mode:
             with open(f"test_vehicle_{vin}.json") as f:
                 return json.load(f)
@@ -173,6 +181,8 @@ class API:
         ).json()
 
     def get_vehicle_status(self, vin: str) -> dict:
+        """Loads another part of status of a vehicle with a given VIN"""
+
         if self.dev_mode:
             with open(f"test_vehicle_status_{vin}.json") as f:
                 return json.load(f)
@@ -189,6 +199,8 @@ class API:
         ).json()
 
     def get_vehicle_location(self, vin: str) -> dict:
+        """Gets last known location of a vehicle with a given VIN"""
+
         if self.dev_mode:
             with open(f"test_vehicle_location_{vin}.json") as f:
                 return json.load(f)
@@ -206,6 +218,8 @@ class API:
 
     def command(self,
                 vin: str, cmd: Command):
+        """Sends given command to the vehicle with a given VIN"""
+
         data = {
             'pin': base64.b64encode(self.pin.encode()).decode(encoding="utf-8"),
         }
