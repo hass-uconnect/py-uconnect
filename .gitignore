@@ -3,3 +3,4 @@ __pycache__
 *.json
 test.py
 dist
+*.egg-info

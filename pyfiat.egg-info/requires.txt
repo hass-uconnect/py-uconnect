@@ -1,3 +1,0 @@
-boto3>=1.35.96
-requests>=2.32.3
-requests-auth-aws-sigv4>=0.7

@@ -24,8 +24,8 @@ setup(
     license="MIT license",
     long_description=readme,
     include_package_data=True,
-    keywords="pyfiat",
-    name="pyfiat",
+    keywords=["fiat", "jeep", "dodge", "ram", "api", "cloud"],
+    name="python-fiat-api",
     packages=find_packages(
         include=["pyfiat", "pyfiat.*"]
     ),
