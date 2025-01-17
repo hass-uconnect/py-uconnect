@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Dict
 from datetime import datetime
-
+import json
 from .api import API
+from .brands import Brand, FIAT_EU
 from .command import Command, COMMANDS_BY_NAME
 
 
@@ -37,24 +38,28 @@ def sg(dct: dict, *keys):
     return convert(dct)
 
 
-@dataclass
-class ChargingLevel:
-    name: str
+def sg_eq(dct: dict, expect, *keys):
+    v = sg(dct, keys)
 
-    def __repr__(self):
-        return self.name
+    if v == None:
+        return None
 
+    return v == expect
 
-CHARGING_LEVEL_DEFAULT = ChargingLevel("DEFAULT")
-CHARGING_LEVEL_1 = ChargingLevel("LEVEL_1")
-CHARGING_LEVEL_2 = ChargingLevel("LEVEL_2")
-CHARGING_LEVEL_3 = ChargingLevel("LEVEL_3")
 
 CHARGING_LEVELS = {
-    "DEFAULT": CHARGING_LEVEL_DEFAULT,
-    "LEVEL_1": CHARGING_LEVEL_1,
-    "LEVEL_2": CHARGING_LEVEL_2,
-    "LEVEL_3": CHARGING_LEVEL_3,
+    "DEFAULT": 0,
+    "LEVEL_1": 1,
+    "LEVEL_2": 2,
+    "LEVEL_3": 3,
+}
+
+CHARGING_LEVEL_PREFS = {
+    "LEVEL_ONE": 1,
+    "LEVEL_TWO": 2,
+    "LEVEL_THREE": 3,
+    "LEVEL_FOUR": 4,
+    "LEVEL_FIVE": 5,
 }
 
 
@@ -87,29 +92,36 @@ class Vehicle:
     trunk_locked: bool = None
 
     odometer: float = None
+    odometer_unit: str = None
     days_to_service: int = None
     distance_to_service: int = None
+    distance_to_service_unit: str = None
     distance_to_empty: int = None
+    distance_to_empty_unit: str = None
     battery_voltage: float = None
 
     # EV related
     plugged_in: bool = None
-    charging_status: str = None
-    charging_level: ChargingLevel = None
+    ev_running: bool = None
+    charging: bool = None
+    charging_level: int = None
+    charging_level_preference: int = None
     state_of_charge: int = None
     time_to_fully_charge_l3: int = None
     time_to_fully_charge_l2: int = None
-    charge_power_preference: str = None
-    ev_running: bool = None
 
     # Wheels
     wheel_front_left_pressure: float = None
+    wheel_front_left_pressure_unit: str = None
     wheel_front_left_pressure_warning: bool = None
     wheel_front_right_pressure: float = None
+    wheel_front_right_pressure_unit: str = None
     wheel_front_right_pressure_warning: bool = None
     wheel_rear_left_pressure: float = None
+    wheel_rear_left_pressure_unit: str = None
     wheel_rear_left_pressure_warning: bool = None
     wheel_rear_right_pressure: float = None
+    wheel_rear_right_pressure_unit: str = None
     wheel_rear_right_pressure_warning: bool = None
 
     # Doors
@@ -135,41 +147,58 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     batt = sg(ev, "battery")
 
     v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
-    v.charging_status = sg(batt, "chargingStatus")
+    v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
+    v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
+    v.charging_level_preference = CHARGING_LEVEL_PREFS.get(
+        sg(ev, "chargePowerPreference"), None)
+    v.plugged_in = sg(batt, "plugInStatus")
+    v.state_of_charge = sg(batt, "stateOfCharge")
+
     v.days_to_service = sg(vi, "daysToService")
     v.distance_to_service = sg(
         vi, "distanceToService", "distanceToService", "value")
+    v.distance_to_service_unit = sg(
+        vi, "distanceToService", "distanceToService", "unit")
     v.distance_to_empty = sg(batt, "distanceToEmpty", "value")
-    v.plugged_in = sg(batt, "plugInStatus")
-    v.state_of_charge = sg(batt, "stateOfCharge")
-    v.ignition_on = sg(ev, "ignitionStatus") == "ON"
-    v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
+    v.distance_to_empty_unit = sg(batt, "distanceToEmpty", "unit")
+
+    v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
-    v.charge_power_preference = sg(ev, "chargePowerPreference")
     v.odometer = sg(vi, "odometer", "odometer", "value")
+    v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
 
     if "tyrePressure" in vi:
         tp = {x["type"]: x for x in vi["tyrePressure"]}
+
         v.wheel_front_left_pressure = sg(tp, "FL", "pressure", "value")
+        v.wheel_front_left_pressure_unit = sg(tp, "FL", "pressure", "unit")
         v.wheel_front_left_pressure_warning = sg(tp, "FL", "warning")
+
         v.wheel_front_right_pressure = sg(tp, "FR", "pressure", "value")
+        v.wheel_front_right_pressure_unit = sg(tp, "FR", "pressure", "unit")
         v.wheel_front_right_pressure_warning = sg(tp, "FR", "warning")
+
         v.wheel_rear_left_pressure = sg(tp, "RL", "pressure", "value")
+        v.wheel_rear_left_pressure_unit = sg(tp, "RL", "pressure", "unit")
         v.wheel_rear_left_pressure_warning = sg(tp, "RL", "warning")
+
         v.wheel_rear_right_pressure = sg(tp, "RR", "pressure", "value")
+        v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
         v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
     return v
 
 
 class Client:
-    def __init__(self, email: str, password: str, pin: str, dev_mode: bool = False):
-        self.api = API(email, password, pin, dev_mode)
+    def __init__(self, email: str, password: str, pin: str, brand: Brand = FIAT_EU, dev_mode: bool = False):
+        self.api = API(email, password, pin, brand, dev_mode)
         self.vehicles: Dict[str, Vehicle] = {}
 
-    def _load_vehicles(self):
-        for x in self.api.list_vehicles():
+    def refresh(self):
+        vehicles = self.api.list_vehicles()
+
+        for x in vehicles:
             vin = x['vin']
 
             if not vin in self.vehicles:
@@ -220,11 +249,8 @@ class Client:
             vehicle.supported_commands = [
                 v for v in enabled_services if v in COMMANDS_BY_NAME]
 
-    def refresh(self):
-        self._load_vehicles()
-
     def get_vehicles(self):
         return self.vehicles
 
-    def command(self, cmd: Command):
-        self.api.command(cmd)
+    def command(self, vin: str, cmd: Command):
+        self.api.command(vin, cmd)

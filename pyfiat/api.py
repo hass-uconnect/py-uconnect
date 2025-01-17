@@ -5,48 +5,25 @@ import boto3
 import base64
 import datetime
 
-from dataclasses import dataclass
 from requests_auth_aws_sigv4 import AWSSigV4
 
 from .command import Command
-
-AWS_REGION = "eu-west-1"
-LOGIN_API_KEY = "3_mOx_J2dRgjXYCdyhchv3b5lhi54eBcdCTX4BI8MORqmZCoQWhA0mV2PTlptLGUQI"
-API_KEY = "2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i"
-LOGIN_URL = "https://loginmyuconnect.fiat.com"
-TOKEN_URL = "https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token"
-API_URL = "https://channels.sdpr-01.fcagcv.com"
-AUTH_API_KEY = "JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys"
-AUTH_URL = "https://mfa.fcl-01.fcagcv.com"
-LOCALE = "de_de"
-
-
-@dataclass
-class Brand:
-    name: str
-    AWS_REGION: str = "eu-west-1"
-    LOGIN_API_KEY = "3_mOx_J2dRgjXYCdyhchv3b5lhi54eBcdCTX4BI8MORqmZCoQWhA0mV2PTlptLGUQI"
-    API_KEY = "2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i"
-    LOGIN_URL = "https://loginmyuconnect.fiat.com"
-    TOKEN_URL = "https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token"
-    API_URL = "https://channels.sdpr-01.fcagcv.com"
-    AUTH_API_KEY = "JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys"
-    AUTH_URL = "https://mfa.fcl-01.fcagcv.com"
+from .brands import Brand
 
 
 class API:
-    def __init__(self, email: str, password: str, pin: str, dev_mode: bool = False):
+    def __init__(self, email: str, password: str, pin: str, brand: Brand, dev_mode: bool = False):
         self.email = email
         self.password = password
         self.pin = pin
+        self.brand = brand
         self.dev_mode = dev_mode
 
         self.uid: str = None
         self.aws_auth: AWSSigV4 = None
 
         self.sess = requests.Session()
-        self.cognito_client = boto3.client(
-            'cognito-identity', AWS_REGION) if not dev_mode else None
+        self.cognito_client = None
 
         self.expire_time: datetime.datetime = None
 
@@ -58,7 +35,7 @@ class API:
             "authMode": "cookie",
             "sdkBuild": "12234",
             "format": "json",
-            "APIKey": LOGIN_API_KEY,
+            "APIKey": self.brand.login_api_key,
         }
 
     def _default_aws_headers(self, key: str):
@@ -74,10 +51,14 @@ class API:
     def login(self):
         """Logs into the Fiat Cloud and caches the auth tokens"""
 
+        if self.cognito_client is None:
+            self.cognito_client = boto3.client(
+                'cognito-identity', self.brand.region)
+
         r = self.sess.request(
             method="GET",
-            url=LOGIN_URL + "/accounts.webSdkBootstrap",
-            params={"apiKey": LOGIN_API_KEY}
+            url=self.brand.login_url + "/accounts.webSdkBootstrap",
+            params={"apiKey": self.brand.login_api_key}
         ).json()
 
         if r['statusCode'] != 200:
@@ -85,7 +66,7 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=LOGIN_URL + "/accounts.login",
+            url=self.brand.login_url + "/accounts.login",
             params=self._with_default_params({
                 "loginID": self.email,
                 "password": self.password,
@@ -102,7 +83,7 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=LOGIN_URL + "/accounts.getJWT",
+            url=self.brand.login_url + "/accounts.getJWT",
             params=self._with_default_params({
                 "login_token": login_token,
                 "fields": "profile.firstName,profile.lastName,profile.email,country,locale,data.disclaimerCodeGSDP"
@@ -114,8 +95,8 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=TOKEN_URL,
-            headers=self._default_aws_headers(API_KEY),
+            url=self.brand.token_url,
+            headers=self._default_aws_headers(self.brand.api_key),
             json={"gigya_token": r['id_token']}
         ).json()
 
@@ -128,7 +109,7 @@ class API:
 
         self.aws_auth = AWSSigV4(
             'execute-api',
-            region=AWS_REGION,
+            region=self.brand.region,
             aws_access_key_id=creds['AccessKeyId'],
             aws_secret_access_key=creds['SecretKey'],
             aws_session_token=creds['SessionToken'],
@@ -156,9 +137,9 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=API_URL + f"/v4/accounts/{self.uid}/vehicles",
+            url=self.brand.api_url + f"/v4/accounts/{self.uid}/vehicles",
             headers=self._default_aws_headers(
-                API_KEY) | {"content-type": "application/json"},
+                self.brand.api_key) | {"content-type": "application/json"},
             params={"stage": "ALL"},
             auth=self.aws_auth,
         ).json()['vehicles']
@@ -174,9 +155,9 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=API_URL + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
+            url=self.brand.api_url + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
             headers=self._default_aws_headers(
-                API_KEY) | {"content-type": "application/json"},
+                self.brand.api_key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
@@ -191,10 +172,10 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=API_URL +
+            url=self.brand.api_url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/status",
             headers=self._default_aws_headers(
-                API_KEY) | {"content-type": "application/json"},
+                self.brand.api_key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
@@ -209,16 +190,19 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=API_URL +
+            url=self.brand.api_url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/location/lastknown",
             headers=self._default_aws_headers(
-                API_KEY) | {"content-type": "application/json"},
+                self.brand.api_key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
     def command(self,
                 vin: str, cmd: Command):
         """Sends given command to the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
 
         data = {
             'pin': base64.b64encode(self.pin.encode()).decode(encoding="utf-8"),
@@ -228,9 +212,9 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=AUTH_URL +
+            url=self.brand.auth_url +
             f"/v1/accounts/{self.uid}/ignite/pin/authenticate",
-            headers=self._default_aws_headers(AUTH_API_KEY) | {
+            headers=self._default_aws_headers(self.brand.auth_api_key) | {
                 "content-type": "application/json"},
             auth=self.aws_auth,
             json=data,
@@ -246,10 +230,10 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=API_URL +
+            url=self.brand.api_url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
             headers=self._default_aws_headers(
-                API_KEY) | {"content-type": "application/json"},
+                self.brand.api_key) | {"content-type": "application/json"},
             auth=self.aws_auth,
             json=data,
         ).json()
