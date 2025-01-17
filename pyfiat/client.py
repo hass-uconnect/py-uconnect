@@ -39,9 +39,9 @@ def sg(dct: dict, *keys):
 
 
 def sg_eq(dct: dict, expect, *keys):
-    v = sg(dct, keys)
+    v = sg(dct, *keys)
 
-    if v == None:
+    if v is None:
         return None
 
     return v == expect
