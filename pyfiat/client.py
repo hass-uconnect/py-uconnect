@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
+from dataclasses_json import dataclass_json
 from typing import Dict
 from datetime import datetime
-import json
 from .api import API
 from .brands import Brand, FIAT_EU
 from .command import Command, COMMANDS_BY_NAME
@@ -63,6 +63,7 @@ CHARGING_LEVEL_PREFS = {
 }
 
 
+@dataclass_json
 @dataclass
 class Location:
     longitude: float = None
@@ -76,6 +77,7 @@ class Location:
         return f"lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})"
 
 
+@dataclass_json
 @dataclass
 class Vehicle:
     vin: str

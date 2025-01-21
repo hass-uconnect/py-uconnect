@@ -3,8 +3,9 @@ import uuid
 import json
 import boto3
 import base64
-import datetime
+import traceback
 
+from datetime import datetime, timedelta
 from requests_auth_aws_sigv4 import AWSSigV4
 
 from .command import Command
@@ -25,7 +26,7 @@ class API:
         self.sess = requests.Session()
         self.cognito_client = None
 
-        self.expire_time: datetime.datetime = None
+        self.expire_time: datetime = None
 
     def _with_default_params(self, params: dict):
         return params | {
@@ -59,10 +60,13 @@ class API:
             method="GET",
             url=self.brand.login_url + "/accounts.webSdkBootstrap",
             params={"apiKey": self.brand.login_api_key}
-        ).json()
+        )
+
+        r.raise_for_status()
+        r = r.json()
 
         if r['statusCode'] != 200:
-            raise Exception("bootstrap failed")
+            raise Exception(f"bootstrap failed: {r}")
 
         r = self.sess.request(
             method="POST",
@@ -73,10 +77,13 @@ class API:
                 "sessionExpiration": 300,
                 "include": "profile,data,emails,subscriptions,preferences"
             })
-        ).json()
+        )
+
+        r.raise_for_status()
+        r = r.json()
 
         if r['statusCode'] != 200:
-            raise Exception("login failed")
+            raise Exception(f"account login failed: {r}")
 
         self.uid = r['UID']
         login_token = r['sessionInfo']['login_token']
@@ -88,24 +95,37 @@ class API:
                 "login_token": login_token,
                 "fields": "profile.firstName,profile.lastName,profile.email,country,locale,data.disclaimerCodeGSDP"
             })
-        ).json()
+        )
+
+        r.raise_for_status()
+        r = r.json()
 
         if r['statusCode'] != 200:
-            raise Exception("unable to obtain JWT")
+            raise Exception(f"unable to obtain JWT: {r}")
 
-        r = self.sess.request(
+        r: dict = self.sess.request(
             method="POST",
             url=self.brand.token_url,
             headers=self._default_aws_headers(self.brand.api_key),
             json={"gigya_token": r['id_token']}
-        ).json()
-
-        r = self.cognito_client.get_credentials_for_identity(
-            IdentityId=r['IdentityId'],
-            Logins={"cognito-identity.amazonaws.com": r['Token']},
         )
 
-        creds = r['Credentials']
+        r.raise_for_status()
+        r = r.json()
+
+        token = r.get('Token', None)
+        identity_id = r.get('IdentityId', None)
+        if token is None or identity_id is None:
+            raise Exception(f"unable to obtain identity & token: {r}")
+
+        r = self.cognito_client.get_credentials_for_identity(
+            IdentityId=identity_id,
+            Logins={"cognito-identity.amazonaws.com": token},
+        )
+
+        creds = r.get('Credentials', None)
+        if not creds:
+            raise Exception(f"unable to obtain AWS credentials: {r}")
 
         self.aws_auth = AWSSigV4(
             'execute-api',
@@ -123,8 +143,11 @@ class API:
         if self.dev_mode:
             return
 
-        if self.expire_time is None or datetime.datetime.now().astimezone() > self.expire_time - datetime.timedelta(minutes=5):
-            self.login()
+        if self.expire_time is None or datetime.now().astimezone() > self.expire_time - timedelta(minutes=5):
+            try:
+                self.login()
+            except Exception as e:
+                raise Exception(f"unable to login: {e}")
 
     def list_vehicles(self) -> list[dict]:
         """Loads a list of vehicles with general info"""

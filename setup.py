@@ -20,16 +20,18 @@ setup(
     ],
     description="Fiat API client for Python",
     install_requires=["boto3>=1.35.96", "requests>=2.32.3",
-                      "requests-auth-aws-sigv4>=0.7"],
+                      "requests-auth-aws-sigv4>=0.7",
+                      "dataclasses_json>=0.6.7"],
     license="MIT license",
     long_description=readme,
     include_package_data=True,
-    keywords=["fiat", "jeep", "dodge", "ram", "api", "cloud"],
+    keywords=["fiat", "jeep", "dodge", "ram", "alfa",
+              "romeo", "maserati", "chrysler", "api", "cloud"],
     name="python-fiat-api",
     packages=find_packages(
         include=["pyfiat", "pyfiat.*"]
     ),
     url="https://github.com/OlgaNovg/pyfiat",
-    version="0.1.3",
+    version="0.1.4",
     zip_safe=False,
 )
