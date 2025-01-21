@@ -3,6 +3,9 @@ name: PyPI Release
 on:
     release:
     workflow_dispatch:
+    push:
+      tags:
+      - 'v*'
 
 jobs:
   release-build:

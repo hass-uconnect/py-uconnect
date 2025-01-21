@@ -40,7 +40,7 @@ FIAT_ASIA = Brand(
     auth_url="https://mfa.fcl-01.fcagcv.com"
 )
 
-FIAT_CAN = Brand(
+FIAT_CANADA = Brand(
     name="FIAT_CANADA",
     region="us-east-1",
     login_api_key="3_Ii2kSgQm4ljy19LIZeLwa76OlmWbpSa8w3aSP5VJdx19tub3oWxsFR-HEusDnUEh",
@@ -159,7 +159,7 @@ JEEP_US = Brand(
     region="us-east-1",
     login_api_key="3_5qxvrevRPG7--nEXe6huWdVvF5kV7bmmJcyLdaTJ8A45XUYpaR398QNeHkd7EB1X",
     api_key="OgNqp2eAv84oZvMrXPIzP8mR8a6d9bVm1aaH9LqU",
-    login_url="https://login-us.jeep.com",
+    login_url="https://accounts.us1.gigya.com",
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
@@ -171,7 +171,7 @@ DODGE_US = Brand(
     region="us-east-1",
     login_api_key="3_etlYkCXNEhz4_KJVYDqnK1CqxQjvJStJMawBohJU2ch3kp30b0QCJtLCzxJ93N-M",
     api_key="OgNqp2eAv84oZvMrXPIzP8mR8a6d9bVm1aaH9LqU",
-    login_url="https://login-us.dodge.com",
+    login_url="https://accounts.us1.gigya.com",
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
@@ -183,7 +183,7 @@ RAM_US = Brand(
     region="us-east-1",
     login_api_key="3_7YjzjoSb7dYtCP5-D6FhPsCciggJFvM14hNPvXN9OsIiV1ujDqa4fNltDJYnHawO",
     api_key="OgNqp2eAv84oZvMrXPIzP8mR8a6d9bVm1aaH9LqU",
-    login_url="https://login-us.ramtrucks.com",
+    login_url="https://accounts.us1.gigya.com",
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
@@ -193,7 +193,7 @@ RAM_US = Brand(
 BRANDS = {
     FIAT_EU.name: FIAT_EU,
     FIAT_US.name: FIAT_US,
-    FIAT_CAN.name: FIAT_CAN,
+    FIAT_CANADA.name: FIAT_CANADA,
     FIAT_ASIA.name: FIAT_ASIA,
 
     JEEP_EU.name: JEEP_EU,
