@@ -32,6 +32,6 @@ setup(
         include=["pyfiat", "pyfiat.*"]
     ),
     url="https://github.com/OlgaNovg/pyfiat",
-    version="0.1.4",
+    version="0.1.5",
     zip_safe=False,
 )
