@@ -3,7 +3,8 @@ import uuid
 import json
 import boto3
 import base64
-import traceback
+import logging
+import http.client as http_client
 
 from datetime import datetime, timedelta
 from requests_auth_aws_sigv4 import AWSSigV4
@@ -13,7 +14,7 @@ from .brands import Brand
 
 
 class API:
-    def __init__(self, email: str, password: str, pin: str, brand: Brand, dev_mode: bool = False):
+    def __init__(self, email: str, password: str, pin: str, brand: Brand, dev_mode: bool = False, debug: bool = False):
         self.email = email
         self.password = password
         self.pin = pin
@@ -27,6 +28,14 @@ class API:
         self.cognito_client = None
 
         self.expire_time: datetime = None
+
+        if debug:
+            http_client.HTTPConnection.debuglevel = 1
+            logging.basicConfig()
+            logging.getLogger().setLevel(logging.DEBUG)
+            requests_log = logging.getLogger("requests.packages.urllib3")
+            requests_log.setLevel(logging.DEBUG)
+            requests_log.propagate = True
 
     def _with_default_params(self, params: dict):
         return params | {
@@ -45,7 +54,7 @@ class API:
             "x-clientapp-version": "1.0",
             "clientrequestid": uuid.uuid4().hex.upper()[0:16],
             "x-api-key": key,
-            "locale": "de_de",
+            "locale": self.brand.locale,
             "x-originator-type": "web",
         }
 
@@ -106,7 +115,8 @@ class API:
         r: dict = self.sess.request(
             method="POST",
             url=self.brand.token_url,
-            headers=self._default_aws_headers(self.brand.api_key),
+            headers=self._default_aws_headers(
+                self.brand.api_key) | {"content-type": "application/json"},
             json={"gigya_token": r['id_token']}
         )
 

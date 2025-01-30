@@ -17,7 +17,7 @@ if brand is None:
         ", ".join([x for x in BRANDS.keys()])}")
     exit(1)
 
-c = Client(login, password, "", brand=brand)
+c = Client(login, password, "", brand=brand, debug=len(argv) > 4)
 c.refresh()
 v = c.get_vehicles()
 

@@ -4,17 +4,29 @@ from dataclasses import dataclass
 @dataclass
 class Brand:
     name: str
-    region: str = "eu-west-1"
-    login_api_key: str = "3_mOx_J2dRgjXYCdyhchv3b5lhi54eBcdCTX4BI8MORqmZCoQWhA0mV2PTlptLGUQI"
-    api_key: str = "2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i"
-    login_url: str = "https://loginmyuconnect.fiat.com"
-    token_url: str = "https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token"
-    api_url: str = "https://channels.sdpr-01.fcagcv.com"
-    auth_api_key: str = "JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys"
-    auth_url: str = "https://mfa.fcl-01.fcagcv.com"
+    region: str
+    login_api_key: str
+    api_key: str
+    login_url: str
+    token_url: str
+    api_url: str
+    auth_api_key: str
+    auth_url: str
+    locale: str
 
 
-FIAT_EU = Brand("FIAT_EU")
+FIAT_EU = Brand(
+    name="FIAT_EU",
+    region="eu-west-1",
+    login_api_key="3_mOx_J2dRgjXYCdyhchv3b5lhi54eBcdCTX4BI8MORqmZCoQWhA0mV2PTlptLGUQI",
+    api_key="2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i",
+    login_url="https://loginmyuconnect.fiat.com",
+    token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
+    api_url="https://channels.sdpr-01.fcagcv.com",
+    auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="de_de",
+)
 
 FIAT_US = Brand(
     name="FIAT_US",
@@ -25,7 +37,8 @@ FIAT_US = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="en_us",
 )
 
 FIAT_ASIA = Brand(
@@ -37,7 +50,8 @@ FIAT_ASIA = Brand(
     token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-01.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="en_us",
 )
 
 FIAT_CANADA = Brand(
@@ -49,7 +63,8 @@ FIAT_CANADA = Brand(
     token_url="https://authz.sdpr-02.prep.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.prep.fcagcv.com",
     auth_api_key="lHBEtsqT1Y5oKvzhvA9KW6rkirU3ZtGf44jTIiQV",
-    auth_url="https://mfa.fcl-02.prep.fcagcv.com"
+    auth_url="https://mfa.fcl-02.prep.fcagcv.com",
+    locale="en_us",
 )
 
 ALFA_ROMEO_US_CANADA = Brand(
@@ -61,7 +76,8 @@ ALFA_ROMEO_US_CANADA = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
 )
 
 ALFA_ROMEO_ASIA = Brand(
@@ -73,7 +89,8 @@ ALFA_ROMEO_ASIA = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
 )
 
 ALFA_ROMEO_EU = Brand(
@@ -85,7 +102,8 @@ ALFA_ROMEO_EU = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="de_de",
 )
 
 CHRYSLER_CANADA = Brand(
@@ -97,7 +115,8 @@ CHRYSLER_CANADA = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
 )
 
 CHRYSLER_US = Brand(
@@ -109,7 +128,8 @@ CHRYSLER_US = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
 )
 
 MASERATI_EU = Brand(
@@ -121,7 +141,8 @@ MASERATI_EU = Brand(
     token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-01.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="de_de",
 )
 
 MASERATI_ASIA = Brand(
@@ -133,7 +154,8 @@ MASERATI_ASIA = Brand(
     token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-01.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="en_us",
 )
 
 MASERATI_US_CANADA = Brand(
@@ -145,13 +167,21 @@ MASERATI_US_CANADA = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
 )
 
 JEEP_EU = Brand(
     name="JEEP_EU",
+    region="eu-west-1",
     login_api_key="3_ZvJpoiZQ4jT5ACwouBG5D1seGEntHGhlL0JYlZNtj95yERzqpH4fFyIewVMmmK7j",
-    login_url="https://login.jeep.com"
+    api_key="2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i",
+    login_url="https://login.jeep.com",
+    token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
+    api_url="https://channels.sdpr-01.fcagcv.com",
+    auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="de_de",
 )
 
 JEEP_US = Brand(
@@ -159,11 +189,25 @@ JEEP_US = Brand(
     region="us-east-1",
     login_api_key="3_5qxvrevRPG7--nEXe6huWdVvF5kV7bmmJcyLdaTJ8A45XUYpaR398QNeHkd7EB1X",
     api_key="OgNqp2eAv84oZvMrXPIzP8mR8a6d9bVm1aaH9LqU",
-    login_url="https://accounts.us1.gigya.com",
+    login_url="https://login-us.jeep.com",
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
-    auth_url="https://mfa.fcl-02.fcagcv.com"
+    auth_url="https://mfa.fcl-02.fcagcv.com",
+    locale="en_us",
+)
+
+JEEP_ASIA = Brand(
+    name="JEEP_ASIA",
+    region="eu-west-1",
+    login_api_key="4_zqGYHC7rM8RCHHl4YFDebA",
+    api_key="2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i",
+    login_url="https://login-iap.jeep.com",
+    token_url="https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token",
+    api_url="https://channels.sdpr-01.fcagcv.com",
+    auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="de_de",
 )
 
 DODGE_US = Brand(
@@ -175,7 +219,8 @@ DODGE_US = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="en_us",
 )
 
 RAM_US = Brand(
@@ -187,7 +232,8 @@ RAM_US = Brand(
     token_url="https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token",
     api_url="https://channels.sdpr-02.fcagcv.com",
     auth_api_key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
-    auth_url="https://mfa.fcl-01.fcagcv.com"
+    auth_url="https://mfa.fcl-01.fcagcv.com",
+    locale="en_us",
 )
 
 BRANDS = {
@@ -197,7 +243,8 @@ BRANDS = {
     FIAT_ASIA.name: FIAT_ASIA,
 
     JEEP_EU.name: JEEP_EU,
-    JEEP_US.name: JEEP_EU,
+    JEEP_US.name: JEEP_US,
+    JEEP_ASIA.name: JEEP_ASIA,
 
     DODGE_US.name: DODGE_US,
 
