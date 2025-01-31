@@ -14,7 +14,7 @@ from .brands import Brand
 
 
 class API:
-    def __init__(self, email: str, password: str, pin: str, brand: Brand, dev_mode: bool = False, debug: bool = False):
+    def __init__(self, email: str, password: str, pin: str, brand: Brand, disable_tls_verification: bool = False, dev_mode: bool = False, debug: bool = False):
         self.email = email
         self.password = password
         self.pin = pin
@@ -28,6 +28,11 @@ class API:
         self.cognito_client = None
 
         self.expire_time: datetime = None
+
+        if disable_tls_verification:
+            import urllib3
+            self.sess.verify = False
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if debug:
             http_client.HTTPConnection.debuglevel = 1

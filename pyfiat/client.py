@@ -193,8 +193,9 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
 
 
 class Client:
-    def __init__(self, email: str, password: str, pin: str, brand: Brand = FIAT_EU, dev_mode: bool = False, debug: bool = False):
-        self.api = API(email, password, pin, brand, dev_mode=dev_mode, debug=debug)
+    def __init__(self, email: str, password: str, pin: str, brand: Brand = FIAT_EU, disable_tls_verification: bool = False, dev_mode: bool = False, debug: bool = False):
+        self.api = API(email, password, pin, brand,
+                       disable_tls_verification=disable_tls_verification, dev_mode=dev_mode, debug=debug)
         self.vehicles: Dict[str, Vehicle] = {}
 
     def refresh(self):
