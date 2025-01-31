@@ -112,13 +112,22 @@ class API:
         if r['statusCode'] != 200:
             raise Exception(f"unable to obtain JWT: {r}")
 
-        r: dict = self.sess.request(
-            method="POST",
-            url=self.brand.token_url,
-            headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
-            json={"gigya_token": r['id_token']}
-        )
+        exc = None
+        for url in self.brand.token_url:
+            try:
+                r = self.sess.request(
+                    method="POST",
+                    url=url,
+                    headers=self._default_aws_headers(
+                        self.brand.api.key) | {"content-type": "application/json"},
+                    json={"gigya_token": r['id_token']}
+                )
+            except Exception as e:
+                exc = e
+            else:
+                break
+        else:
+            raise Exception(f"unable to obtain token: {exc}")
 
         r.raise_for_status()
         r = r.json()
@@ -170,9 +179,9 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=self.brand.api_url + f"/v4/accounts/{self.uid}/vehicles",
+            url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles",
             headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
+                self.brand.api.key) | {"content-type": "application/json"},
             params={"stage": "ALL"},
             auth=self.aws_auth,
         ).json()['vehicles']
@@ -188,9 +197,9 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=self.brand.api_url + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
+            url=self.brand.api.url + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
             headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
+                self.brand.api.key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
@@ -205,10 +214,10 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=self.brand.api_url +
+            url=self.brand.api.url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/status",
             headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
+                self.brand.api.key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
@@ -223,10 +232,10 @@ class API:
 
         return self.sess.request(
             method="GET",
-            url=self.brand.api_url +
+            url=self.brand.api.url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/location/lastknown",
             headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
+                self.brand.api.key) | {"content-type": "application/json"},
             auth=self.aws_auth,
         ).json()
 
@@ -243,18 +252,27 @@ class API:
 
         self._refresh_token_if_needed()
 
-        r = self.sess.request(
-            method="POST",
-            url=self.brand.auth_url +
-            f"/v1/accounts/{self.uid}/ignite/pin/authenticate",
-            headers=self._default_aws_headers(self.brand.auth_api_key) | {
-                "content-type": "application/json"},
-            auth=self.aws_auth,
-            json=data,
-        ).json()
+        exc = None
+        for auth in self.brand.auth:
+            try:
+                r = self.sess.request(
+                    method="POST",
+                    url=auth.url +
+                    f"/v1/accounts/{self.uid}/ignite/pin/authenticate",
+                    headers=self._default_aws_headers(auth.token) | {
+                        "content-type": "application/json"},
+                    auth=self.aws_auth,
+                    json=data,
+                ).json()
+            except Exception as e:
+                exc = e
+            else:
+                break
+        else:
+            raise Exception(f"Authentication failed: {exc}")
 
         if not 'token' in r:
-            raise Exception("authentication failed")
+            raise Exception("authentication failed: no token found")
 
         data = {
             "command": cmd.name,
@@ -263,10 +281,10 @@ class API:
 
         r = self.sess.request(
             method="POST",
-            url=self.brand.api_url +
+            url=self.brand.api.url +
             f"/v1/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
             headers=self._default_aws_headers(
-                self.brand.api_key) | {"content-type": "application/json"},
+                self.brand.api.key) | {"content-type": "application/json"},
             auth=self.aws_auth,
             json=data,
         ).json()
