@@ -31,7 +31,7 @@ setup(
     packages=find_packages(
         include=["pyfiat", "pyfiat.*"]
     ),
-    url="https://github.com/Blueion76/pyfiat",
-    version="0.1.8",
+    url="https://github.com/OlgaNovg/pyfiat",
+    version="0.1.9",
     zip_safe=False,
 )
