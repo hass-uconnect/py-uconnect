@@ -161,14 +161,16 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         vi, "distanceToService", "distanceToService", "value")
     v.distance_to_service_unit = sg(
         vi, "distanceToService", "distanceToService", "unit")
-    v.distance_to_empty = sg(batt, "distanceToEmpty", "value")
-    v.distance_to_empty_unit = sg(batt, "distanceToEmpty", "unit")
-
+    v.distance_to_empty = sg(vi, "fuel", "distanceToEmpty", "value")
+    v.distance_to_empty_unit = sg(vi, "fuel", "distanceToEmpty", "unit")
+    v.oil_level = sg(vi, "oilLevel", "oilLevel")
+    
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
     v.odometer = sg(vi, "odometer", "odometer", "value")
     v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
+    
 
     if "tyrePressure" in vi:
         tp = {x["type"]: x for x in vi["tyrePressure"]}
