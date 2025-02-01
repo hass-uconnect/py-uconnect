@@ -27,7 +27,7 @@ setup(
     include_package_data=True,
     keywords=["fiat", "jeep", "dodge", "ram", "alfa",
               "romeo", "maserati", "chrysler", "api", "cloud"],
-    name="python-fiat-api-blueion",
+    name="python-fiat-api",
     packages=find_packages(
         include=["pyfiat", "pyfiat.*"]
     ),
