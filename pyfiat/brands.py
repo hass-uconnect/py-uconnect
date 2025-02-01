@@ -95,7 +95,7 @@ FIAT_ASIA = Brand(
     token_url=[TOKEN_URL_EU, TOKEN_URL_US],
     api=API_EU,
     auth=[AUTH_EU, AUTH_US],
-    locale=LOCALE_US,
+    locale=LOCALE_EU,
 )
 
 FIAT_CANADA = Brand(
@@ -126,9 +126,9 @@ ALFA_ROMEO_ASIA = Brand(
     login_api_key="4_PSQeADnQ4p5XOaDgT0B5pA",
     login_url="https://login-iap.alfaromeo.com",
     token_url=[TOKEN_URL_US, TOKEN_URL_EU],
-    api=API_US,
+    api=API_EU,
     auth=[AUTH_US, AUTH_EU],
-    locale=LOCALE_US,
+    locale=LOCALE_EU,
 )
 
 ALFA_ROMEO_EU = Brand(
@@ -137,7 +137,7 @@ ALFA_ROMEO_EU = Brand(
     login_api_key="3_h8sj2VQI-KYXiunPq9a1QuAA4yWkY0r5AD1u8A8B1RPn_Cvl54xcoc2-InH5onJ1",
     login_url="https://login.alfaromeo.com",
     token_url=[TOKEN_URL_EU, TOKEN_URL_US],
-    api=API_US,
+    api=API_EU,
     auth=[AUTH_US, AUTH_EU],
     locale=LOCALE_EU,
 )
