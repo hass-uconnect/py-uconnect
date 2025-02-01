@@ -101,6 +101,7 @@ class Vehicle:
     distance_to_empty: int = None
     distance_to_empty_unit: str = None
     battery_voltage: float = None
+    oil_level: int = None
 
     # EV related
     plugged_in: bool = None
