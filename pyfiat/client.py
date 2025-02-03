@@ -98,8 +98,10 @@ class Vehicle:
     days_to_service: int = None
     distance_to_service: int = None
     distance_to_service_unit: str = None
-    distance_to_empty: int = None
-    distance_to_empty_unit: str = None
+    distance_to_empty_gas: int = None
+    distance_to_empty_unit_gas: str = None
+    distance_to_empty_ev: int = None
+    distance_to_empty_unit_ev: str = None
     battery_voltage: float = None
     oil_level: int = None
 
