@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from pyfiat import Client
-from pyfiat.brands import BRANDS
+from py_uconnect import Client
+from py_uconnect.brands import BRANDS
 from sys import argv, exit
 
 

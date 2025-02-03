@@ -1,1 +1,1 @@
-# Python client for accessing FIAT cloud API
+# Python client for accessing FCA/Stellantis cars' cloud API

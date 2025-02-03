@@ -67,7 +67,7 @@ class API:
         self.sess.verify = verify
 
     def login(self):
-        '''Logs into the Fiat Cloud and caches the auth tokens'''
+        '''Logs into the Uconnect and caches the auth tokens'''
 
         if self.cognito_client is None:
             self.cognito_client = boto3.client(

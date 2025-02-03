@@ -2,8 +2,9 @@ from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 from typing import Dict
 from datetime import datetime
+
 from .api import API
-from .brands import Brand, FIAT_EU
+from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
 
@@ -199,7 +200,7 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
 
 
 class Client:
-    def __init__(self, email: str, password: str, pin: str, brand: Brand = FIAT_EU, disable_tls_verification: bool = False, dev_mode: bool = False, debug: bool = False):
+    def __init__(self, email: str, password: str, pin: str, brand: Brand, disable_tls_verification: bool = False, dev_mode: bool = False, debug: bool = False):
         self.api = API(email, password, pin, brand,
                        disable_tls_verification=disable_tls_verification, dev_mode=dev_mode, debug=debug)
         self.vehicles: Dict[str, Vehicle] = {}
