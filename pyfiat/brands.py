@@ -79,7 +79,7 @@ FIAT_EU = Brand(
 FIAT_US = Brand(
     name="FIAT_US",
     region=REGION_US,
-    login_api_key="3_etlYkCXNEhz4_KJVYDqnK1CqxQjvJStJMawBohJU2ch3kp30b0QCJtLCzxJ93N-M",
+    login_api_key="3_WfFvlZJwcSdOD0LFQCngUV3W390R4Yshpuq3RsZvnV4VG0c9Q6R0RtDwcXc8dTrI",
     login_url="https://login-us.fiat.com",
     token_url=[TOKEN_URL_US, TOKEN_URL_EU],
     api=API_US,
@@ -95,7 +95,7 @@ FIAT_ASIA = Brand(
     token_url=[TOKEN_URL_EU, TOKEN_URL_US],
     api=API_EU,
     auth=[AUTH_EU, AUTH_US],
-    locale=LOCALE_US,
+    locale=LOCALE_EU,
 )
 
 FIAT_CANADA = Brand(
@@ -122,23 +122,23 @@ ALFA_ROMEO_US_CANADA = Brand(
 
 ALFA_ROMEO_ASIA = Brand(
     name="ALFA_ROMEO_ASIA",
-    region=REGION_US,
+    region=REGION_EU,
     login_api_key="4_PSQeADnQ4p5XOaDgT0B5pA",
     login_url="https://login-iap.alfaromeo.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
-    api=API_US,
-    auth=[AUTH_US, AUTH_EU],
-    locale=LOCALE_US,
+    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    api=API_EU,
+    auth=[AUTH_EU, AUTH_US],
+    locale=LOCALE_EU,
 )
 
 ALFA_ROMEO_EU = Brand(
     name="ALFA_ROMEO_EU",
-    region=REGION_US,
+    region=REGION_EU,
     login_api_key="3_h8sj2VQI-KYXiunPq9a1QuAA4yWkY0r5AD1u8A8B1RPn_Cvl54xcoc2-InH5onJ1",
     login_url="https://login.alfaromeo.com",
     token_url=[TOKEN_URL_EU, TOKEN_URL_US],
-    api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    api=API_EU,
+    auth=[AUTH_EU, AUTH_US],
     locale=LOCALE_EU,
 )
 
@@ -183,7 +183,7 @@ MASERATI_ASIA = Brand(
     token_url=[TOKEN_URL_EU, TOKEN_URL_US],
     api=API_EU,
     auth=[AUTH_EU, AUTH_US],
-    locale=LOCALE_US,
+    locale=LOCALE_EU,
 )
 
 MASERATI_US_CANADA = Brand(
@@ -233,11 +233,11 @@ JEEP_ASIA = Brand(
 DODGE_US = Brand(
     name="DODGE_US",
     region=REGION_US,
-    login_api_key="3_etlYkCXNEhz4_KJVYDqnK1CqxQjvJStJMawBohJU2ch3kp30b0QCJtLCzxJ93N-M",
-    login_url="https://accounts.us1.gigya.com",
+    login_api_key="4_dSRvo6ZIpp8_St7BF9VHGA",
+    login_url="https://login-us.dodge.com",
     token_url=[TOKEN_URL_US, TOKEN_URL_EU],
     api=API_US,
-    auth=[AUTH_EU, AUTH_US],
+    auth=[AUTH_US, AUTH_EU],
     locale=LOCALE_US,
 )
 
@@ -245,10 +245,10 @@ RAM_US = Brand(
     name="RAM_US",
     region=REGION_US,
     login_api_key="3_7YjzjoSb7dYtCP5-D6FhPsCciggJFvM14hNPvXN9OsIiV1ujDqa4fNltDJYnHawO",
-    login_url="https://accounts.us1.gigya.com",
+    login_url="https://login-us.ramtrucks.com",
     token_url=[TOKEN_URL_US, TOKEN_URL_EU],
     api=API_US,
-    auth=[AUTH_EU, AUTH_US],
+    auth=[AUTH_US, AUTH_EU],
     locale=LOCALE_US,
 )
 
