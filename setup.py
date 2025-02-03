@@ -29,9 +29,9 @@ setup(
               "romeo", "maserati", "chrysler", "api", "cloud"],
     name="py-uconnect",
     packages=find_packages(
-        include=["py-uconnect", "py-uconnect.*"]
+        include=["py_uconnect", "py_uconnect.*"]
     ),
     url="https://github.com/hass-uconnect/py-uconnect",
-    version="0.1.11",
+    version="0.1.12",
     zip_safe=False,
 )
