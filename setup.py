@@ -27,11 +27,11 @@ setup(
     include_package_data=True,
     keywords=["fiat", "jeep", "dodge", "ram", "alfa",
               "romeo", "maserati", "chrysler", "api", "cloud"],
-    name="python-fiat-api-blueion",
+    name="python-fiat-api",
     packages=find_packages(
         include=["pyfiat", "pyfiat.*"]
     ),
     url="https://github.com/OlgaNovg/pyfiat",
-    version="0.2.0",
+    version="0.1.9",
     zip_safe=False,
 )
