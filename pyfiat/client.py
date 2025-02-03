@@ -170,8 +170,8 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.distance_to_empty_gas_unit = sg(vi, "fuel", "distanceToEmpty", "unit")
     v.distance_to_empty_ev = sg(batt, "distanceToEmpty", "value")
     v.distance_to_empty_ev_unit = sg(batt, "distanceToEmpty", "unit")
-    v.fuel_low_gas = sg(vi, "fuel", "isFuelLevelLow", "value")
-    v.fuel_amount_gas = sg(vi, "fuel", "fuelAmountLevel", "value")
+    v.fuel_low_gas = sg(vi, "fuel", "isFuelLevelLow")
+    v.fuel_amount_gas = sg(vi, "fuel", "fuelAmountLevel")
     v.oil_level = sg(vi, "oilLevel", "oilLevel")
     
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
