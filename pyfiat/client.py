@@ -98,14 +98,12 @@ class Vehicle:
     days_to_service: int = None
     distance_to_service: int = None
     distance_to_service_unit: str = None
-    distance_to_empty_gas: int = None
-    distance_to_empty_gas_unit: str = None
-    distance_to_empty_ev: int = None
-    distance_to_empty_ev_unit: str = None
+    distance_to_empty: int = None
+    distance_to_empty_unit: str = None
     battery_voltage: float = None
     oil_level: int = None
-    fuel_low_gas: bool = None
-    fuel_amount_gas: int = None
+    fuel_low: bool = None
+    fuel_amount: int = None
     
     # EV related
     plugged_in: bool = None
@@ -166,12 +164,10 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         vi, "distanceToService", "distanceToService", "value")
     v.distance_to_service_unit = sg(
         vi, "distanceToService", "distanceToService", "unit")
-    v.distance_to_empty_gas = sg(vi, "fuel", "distanceToEmpty", "value")
-    v.distance_to_empty_gas_unit = sg(vi, "fuel", "distanceToEmpty", "unit")
-    v.distance_to_empty_ev = sg(batt, "distanceToEmpty", "value")
-    v.distance_to_empty_ev_unit = sg(batt, "distanceToEmpty", "unit")
-    v.fuel_low_gas = sg(vi, "fuel", "isFuelLevelLow")
-    v.fuel_amount_gas = sg(vi, "fuel", "fuelAmountLevel")
+    v.distance_to_empty = sg(vi, "fuel", "distanceToEmpty", "value")
+    v.distance_to_empty_unit = sg(vi, "fuel", "distanceToEmpty", "unit")
+    v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
+    v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
     v.oil_level = sg(vi, "oilLevel", "oilLevel")
     
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
