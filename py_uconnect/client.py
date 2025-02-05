@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timedelta
+from time import sleep
 
 from .api import API
 from .brands import Brand
@@ -177,7 +178,7 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.odometer = sg(vi, 'odometer', 'odometer', 'value')
     v.odometer_unit = sg(vi, 'odometer', 'odometer', 'unit')
 
-    if 'tyrePressure' in vi:
+    if isinstance(vi, dict) and 'tyrePressure' in vi:
         tp = {x['type']: x for x in vi['tyrePressure']}
 
         v.wheel_front_left_pressure = sg(tp, 'FL', 'pressure', 'value')
@@ -206,9 +207,13 @@ class Client:
         self.vehicles: Dict[str, Vehicle] = {}
 
     def set_tls_verification(self, verify: bool):
+        '''Enable or disable TLS certificate verification'''
+
         self.api.set_tls_verification(verify)
 
     def refresh(self):
+        '''Refreshes all the vehicle data and caches it locally'''
+
         vehicles = self.api.list_vehicles()
 
         for x in vehicles:
@@ -269,7 +274,36 @@ class Client:
                 v for v in enabled_services if v in COMMANDS_BY_NAME]
 
     def get_vehicles(self):
+        '''Returns all vehicles data. Must execute refresh method before.'''
+
         return self.vehicles
 
     def command(self, vin: str, cmd: Command):
-        self.api.command(vin, cmd)
+        '''Execute a given command against a car with a given VIN'''
+
+        return self.api.command(vin, cmd)
+
+    def _get_commands_statuses(self, vin: str) -> dict:
+        r = self.api.get_vehicle_notifications(vin)
+
+        return {
+            x['correlationId']: (x['notification']['data']
+                                 ['status'].lower() == "success")
+            for x in r['notifications']['items']
+        }
+
+    def command_verify(self, vin: str, cmd: Command,
+                       timeout: timedelta = timedelta(seconds=60),
+                       interval: timedelta = timedelta(seconds=2)):
+        '''Execute a given command against a car with a given VIN and poll for the status'''
+
+        id = self.command(vin, cmd)
+
+        start = datetime.now()
+        while datetime.now() - start < timeout:
+            sleep(interval.seconds)
+            r = self._get_commands_statuses(vin)
+            if id in r:
+                return r[id]
+
+        raise Exception(f'unable to obtain command status: timed out (id {id})')

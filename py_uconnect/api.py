@@ -247,6 +247,25 @@ class API:
             auth=self.aws_auth,
         ).json()
 
+    def get_vehicle_notifications(self, vin: str, limit: int | None = 30) -> dict:
+        '''Loads notifications for a vehicle with a given VIN'''
+
+        self._refresh_token_if_needed()
+
+        url = self.brand.api.url + \
+            f'/v1/accounts/{self.uid}/vehicles/{vin}/notifications'
+
+        if limit is not None:
+            url += f'?limit={limit}'
+
+        return self.sess.request(
+            method='GET',
+            url=url,
+            headers=self._default_aws_headers(
+                self.brand.api.key) | {'content-type': 'application/json'},
+            auth=self.aws_auth,
+        ).json()
+
     def command(self,
                 vin: str, cmd: Command):
         '''Sends given command to the vehicle with a given VIN'''
@@ -280,7 +299,7 @@ class API:
             raise Exception(f'Authentication failed: {exc}')
 
         if not 'token' in r:
-            raise Exception('authentication failed: no token found')
+            raise Exception(f'authentication failed: no token found: {r}')
 
         data = {
             'command': cmd.name,
@@ -300,3 +319,5 @@ class API:
         if not 'responseStatus' in r or r['responseStatus'] != 'pending':
             error = r.get('debugMsg', 'unknown error')
             raise Exception(f'command queuing failed: {error}')
+
+        return r['correlationId']
