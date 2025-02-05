@@ -24,6 +24,7 @@ setup(
                       "dataclasses_json>=0.6.7"],
     license="Apache license",
     long_description=readme,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords=["fiat", "jeep", "dodge", "ram", "alfa",
               "romeo", "maserati", "chrysler", "api", "cloud"],
