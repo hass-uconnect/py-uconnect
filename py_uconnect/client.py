@@ -3,6 +3,7 @@ from dataclasses_json import dataclass_json
 from typing import Dict
 from datetime import datetime, timedelta
 from time import sleep
+from psygnal import evented
 
 from .api import API
 from .brands import Brand
@@ -143,6 +144,7 @@ class Vehicle:
 
     location: Location = None
     supported_commands: list[str] = field(default_factory=list)
+    last_full_update: datetime = None
 
     def __repr__(self):
         return f'{self.vin} (nick: {self.nickname})'
@@ -217,6 +219,7 @@ class Client:
         vehicles = self.api.list_vehicles()
 
         for x in vehicles:
+            full_update_done = True
             vin = x['vin']
 
             if not vin in self.vehicles:
@@ -227,6 +230,9 @@ class Client:
                 vehicle = self.vehicles[vin]
 
             info = self.api.get_vehicle(vin)
+            if not 'vehicleInfo' in info and not 'evInfo' in info:
+                full_update_done = False
+
             _update_vehicle(vehicle, info)
 
             try:
@@ -241,29 +247,35 @@ class Client:
                     updated=datetime.fromtimestamp(loc['timeStamp'] / 1000)
                 )
             except:
-                pass
+                full_update_done = False
 
             try:
                 s = self.api.get_vehicle_status(vin)
 
-                vehicle.door_driver_locked = sg_eq(
-                    s, 'LOCKED', 'doors', 'driver', 'status')
-                vehicle.door_passenger_locked = sg_eq(
-                    s, 'LOCKED', 'doors', 'passenger', 'status')
-                vehicle.door_rear_left_locked = sg_eq(
-                    s, 'LOCKED', 'doors', 'leftRear', 'status')
-                vehicle.door_rear_right_locked = sg_eq(
-                    s, 'LOCKED', 'doors', 'rightRear', 'status')
+                # Check at least one key is present in the response
+                if not set('doors', 'windows', 'trunk', 'evRunning').intersection(set(s.keys())):
+                    full_update_done = False
 
-                vehicle.window_driver_closed = sg_eq(
-                    s, 'CLOSED', 'windows', 'driver', 'status')
-                vehicle.window_passenger_closed = sg_eq(
-                    s, 'CLOSED', 'windows', 'passenger', 'status')
+                if 'doors' in s:
+                    vehicle.door_driver_locked = sg_eq(
+                        s, 'LOCKED', 'doors', 'driver', 'status')
+                    vehicle.door_passenger_locked = sg_eq(
+                        s, 'LOCKED', 'doors', 'passenger', 'status')
+                    vehicle.door_rear_left_locked = sg_eq(
+                        s, 'LOCKED', 'doors', 'leftRear', 'status')
+                    vehicle.door_rear_right_locked = sg_eq(
+                        s, 'LOCKED', 'doors', 'rightRear', 'status')
+
+                if 'windows' in s:
+                    vehicle.window_driver_closed = sg_eq(
+                        s, 'CLOSED', 'windows', 'driver', 'status')
+                    vehicle.window_passenger_closed = sg_eq(
+                        s, 'CLOSED', 'windows', 'passenger', 'status')
 
                 vehicle.trunk_locked = sg_eq(s, 'LOCKED', 'trunk', 'status')
                 vehicle.ev_running = sg_eq(s, 'ON', 'evRunning', 'status')
             except:
-                pass
+                full_update_done = False
 
             enabled_services = []
             if 'services' in x:
@@ -272,6 +284,9 @@ class Client:
 
             vehicle.supported_commands = [
                 v for v in enabled_services if v in COMMANDS_BY_NAME]
+
+            if full_update_done:
+                vehicle.last_full_update = datetime.now()
 
     def get_vehicles(self):
         '''Returns all vehicles data. Must execute refresh method before.'''
