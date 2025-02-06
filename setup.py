@@ -33,6 +33,6 @@ setup(
         include=["py_uconnect", "py_uconnect.*"]
     ),
     url="https://github.com/hass-uconnect/py-uconnect",
-    version="0.1.16",
+    version="0.1.18",
     zip_safe=False,
 )
