@@ -3,7 +3,6 @@ from dataclasses_json import dataclass_json
 from typing import Dict
 from datetime import datetime, timedelta
 from time import sleep
-from psygnal import evented
 
 from .api import API
 from .brands import Brand
