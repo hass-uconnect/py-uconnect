@@ -285,7 +285,7 @@ class Client:
                 v for v in enabled_services if v in COMMANDS_BY_NAME]
 
             if full_update_done:
-                vehicle.last_full_update = datetime.now()
+                vehicle.last_full_update = datetime.now().astimezone()
 
     def get_vehicles(self):
         '''Returns all vehicles data. Must execute refresh method before.'''
