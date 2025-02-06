@@ -229,7 +229,7 @@ class Client:
                 vehicle = self.vehicles[vin]
 
             info = self.api.get_vehicle(vin)
-            if not 'vehicleInfo' in info and not 'evInfo' in info:
+            if not set(['vehicleInfo', 'evInfo']).intersection(info.keys()):
                 full_update_done = False
 
             _update_vehicle(vehicle, info)
@@ -252,7 +252,7 @@ class Client:
                 s = self.api.get_vehicle_status(vin)
 
                 # Check at least one key is present in the response
-                if not set('doors', 'windows', 'trunk', 'evRunning').intersection(set(s.keys())):
+                if not set(['doors', 'windows', 'trunk', 'evRunning']).intersection(set(s.keys())):
                     full_update_done = False
 
                 if 'doors' in s:

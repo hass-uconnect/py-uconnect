@@ -185,14 +185,19 @@ class API:
 
         self._refresh_token_if_needed()
 
-        return self.sess.request(
+        r = self.sess.request(
             method='GET',
             url=self.brand.api.url + f'/v4/accounts/{self.uid}/vehicles',
             headers=self._default_aws_headers(
                 self.brand.api.key) | {'content-type': 'application/json'},
             params={'stage': 'ALL'},
             auth=self.aws_auth,
-        ).json()['vehicles']
+        ).json()
+
+        if not 'vehicles' in r:
+            raise Exception(f"incorrect response: {r}")
+
+        return r['vehicles']
 
     def get_vehicle(self, vin: str) -> dict:
         '''Gets a more detailed info abount a vehicle with a given VIN'''
