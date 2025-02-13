@@ -81,6 +81,9 @@ class API:
     def set_tls_verification(self, verify: bool):
         self.sess.verify = verify
 
+    def set_pin(self, pin: str):
+        self.pin = pin
+
     def login(self):
         """Logs into the Uconnect and caches the auth tokens"""
 

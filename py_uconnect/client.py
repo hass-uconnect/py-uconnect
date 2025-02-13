@@ -245,6 +245,9 @@ class Client:
 
         self.api.set_tls_verification(verify)
 
+    def set_pin(self, pin: str):
+        self.api.set_pin(pin)
+
     def refresh(self):
         """Refreshes all the vehicle data and caches it locally"""
 
