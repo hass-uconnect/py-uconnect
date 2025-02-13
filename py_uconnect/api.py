@@ -12,7 +12,7 @@ from requests_auth_aws_sigv4 import AWSSigV4
 from .command import Command
 from .brands import Brand
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("py_uconnect")
 
 
 class API:
@@ -24,7 +24,7 @@ class API:
         brand: Brand,
         disable_tls_verification: bool = False,
         dev_mode: bool = False,
-        debug: bool = False,
+        trace: bool = False,
     ):
         self.email = email
         self.password = password
@@ -46,10 +46,10 @@ class API:
 
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        if debug:
+        if trace:
             http_client.HTTPConnection.debuglevel = 1
             logging.basicConfig()
-            logging.getLogger().setLevel(logging.DEBUG)
+            logging.getLogger().setLevel(logging.TRACE)
             requests_log = logging.getLogger("requests.packages.urllib3")
             requests_log.setLevel(logging.DEBUG)
             requests_log.propagate = True

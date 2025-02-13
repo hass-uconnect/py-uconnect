@@ -215,7 +215,7 @@ class Client:
         brand: Brand,
         disable_tls_verification: bool = False,
         dev_mode: bool = False,
-        debug: bool = False,
+        trace: bool = False,
     ):
         self.api = API(
             email,
@@ -224,7 +224,7 @@ class Client:
             brand,
             disable_tls_verification=disable_tls_verification,
             dev_mode=dev_mode,
-            debug=debug,
+            trace=trace,
         )
         self.vehicles: Dict[str, Vehicle] = {}
 
