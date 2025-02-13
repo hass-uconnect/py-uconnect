@@ -13,7 +13,7 @@ def convert(v):
     if not isinstance(v, str):
         return v
 
-    if v == 'null':
+    if v == "null":
         return None
 
     try:
@@ -50,18 +50,18 @@ def sg_eq(dct: dict, expect, *keys):
 
 
 CHARGING_LEVELS = {
-    'DEFAULT': 0,
-    'LEVEL_1': 1,
-    'LEVEL_2': 2,
-    'LEVEL_3': 3,
+    "DEFAULT": 0,
+    "LEVEL_1": 1,
+    "LEVEL_2": 2,
+    "LEVEL_3": 3,
 }
 
 CHARGING_LEVEL_PREFS = {
-    'LEVEL_ONE': 1,
-    'LEVEL_TWO': 2,
-    'LEVEL_THREE': 3,
-    'LEVEL_FOUR': 4,
-    'LEVEL_FIVE': 5,
+    "LEVEL_ONE": 1,
+    "LEVEL_TWO": 2,
+    "LEVEL_THREE": 3,
+    "LEVEL_FOUR": 4,
+    "LEVEL_FIVE": 5,
 }
 
 
@@ -76,7 +76,7 @@ class Location:
     updated: datetime = None
 
     def __repr__(self):
-        return f'lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})'
+        return f"lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})"
 
 
 @dataclass_json
@@ -146,90 +146,122 @@ class Vehicle:
     last_full_update: datetime = None
 
     def __repr__(self):
-        return f'{self.vin} (nick: {self.nickname})'
+        return f"{self.vin} (nick: {self.nickname})"
 
 
 def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
-    vi = sg(p, 'vehicleInfo')
-    ev = sg(p, 'evInfo')
-    batt = sg(ev, 'battery')
+    vi = sg(p, "vehicleInfo")
+    ev = sg(p, "evInfo")
+    batt = sg(ev, "battery")
 
-    v.battery_voltage = sg(vi, 'batteryInfo', 'batteryVoltage', 'value')
-    v.charging = sg_eq(batt, 'CHARGING', 'chargingStatus')
-    v.charging_level = CHARGING_LEVELS.get(sg(batt, 'chargingLevel'), None)
+    v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
+    v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
+    v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
     v.charging_level_preference = CHARGING_LEVEL_PREFS.get(
-        sg(ev, 'chargePowerPreference'), None)
-    v.plugged_in = sg(batt, 'plugInStatus')
-    v.state_of_charge = sg(batt, 'stateOfCharge')
+        sg(ev, "chargePowerPreference"), None
+    )
+    v.plugged_in = sg(batt, "plugInStatus")
+    v.state_of_charge = sg(batt, "stateOfCharge")
 
-    v.days_to_service = sg(vi, 'daysToService')
-    v.distance_to_service = sg(
-        vi, 'distanceToService', 'distanceToService', 'value')
+    v.days_to_service = sg(vi, "daysToService")
+    v.distance_to_service = sg(vi, "distanceToService", "distanceToService", "value")
     v.distance_to_service_unit = sg(
-        vi, 'distanceToService', 'distanceToService', 'unit')
-    v.distance_to_empty = sg(vi, 'fuel', 'distanceToEmpty', 'value')
-    v.distance_to_empty_unit = sg(vi, 'fuel', 'distanceToEmpty', 'unit')
-    v.fuel_low = sg(vi, 'fuel', 'isFuelLevelLow')
-    v.fuel_amount = sg(vi, 'fuel', 'fuelAmountLevel')
-    v.oil_level = sg(vi, 'oilLevel', 'oilLevel')
+        vi, "distanceToService", "distanceToService", "unit"
+    )
+    v.distance_to_empty = sg(vi, "fuel", "distanceToEmpty", "value") or sg(
+        ev, "distanceToEmpty", "value"
+    )
+    v.distance_to_empty_unit = sg(vi, "fuel", "distanceToEmpty", "unit") or sg(
+        ev, "distanceToEmpty", "unit"
+    )
+    v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
+    v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
+    v.oil_level = sg(vi, "oilLevel", "oilLevel")
 
-    v.ignition_on = sg_eq(ev, 'ON', 'ignitionStatus')
-    v.time_to_fully_charge_l3 = sg(batt, 'timeToFullyChargeL3')
-    v.time_to_fully_charge_l2 = sg(batt, 'timeToFullyChargeL2')
-    v.odometer = sg(vi, 'odometer', 'odometer', 'value')
-    v.odometer_unit = sg(vi, 'odometer', 'odometer', 'unit')
+    v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
+    v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
+    v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
+    v.odometer = sg(vi, "odometer", "odometer", "value")
+    v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
 
-    if isinstance(vi, dict) and 'tyrePressure' in vi:
-        tp = {x['type']: x for x in vi['tyrePressure']}
+    if isinstance(vi, dict) and "tyrePressure" in vi:
+        tp = {x["type"]: x for x in vi["tyrePressure"]}
 
-        v.wheel_front_left_pressure = sg(tp, 'FL', 'pressure', 'value')
-        v.wheel_front_left_pressure_unit = sg(tp, 'FL', 'pressure', 'unit')
-        v.wheel_front_left_pressure_warning = sg(tp, 'FL', 'warning')
+        v.wheel_front_left_pressure = sg(tp, "FL", "pressure", "value")
+        v.wheel_front_left_pressure_unit = sg(tp, "FL", "pressure", "unit")
+        v.wheel_front_left_pressure_warning = sg(tp, "FL", "warning")
 
-        v.wheel_front_right_pressure = sg(tp, 'FR', 'pressure', 'value')
-        v.wheel_front_right_pressure_unit = sg(tp, 'FR', 'pressure', 'unit')
-        v.wheel_front_right_pressure_warning = sg(tp, 'FR', 'warning')
+        v.wheel_front_right_pressure = sg(tp, "FR", "pressure", "value")
+        v.wheel_front_right_pressure_unit = sg(tp, "FR", "pressure", "unit")
+        v.wheel_front_right_pressure_warning = sg(tp, "FR", "warning")
 
-        v.wheel_rear_left_pressure = sg(tp, 'RL', 'pressure', 'value')
-        v.wheel_rear_left_pressure_unit = sg(tp, 'RL', 'pressure', 'unit')
-        v.wheel_rear_left_pressure_warning = sg(tp, 'RL', 'warning')
+        v.wheel_rear_left_pressure = sg(tp, "RL", "pressure", "value")
+        v.wheel_rear_left_pressure_unit = sg(tp, "RL", "pressure", "unit")
+        v.wheel_rear_left_pressure_warning = sg(tp, "RL", "warning")
 
-        v.wheel_rear_right_pressure = sg(tp, 'RR', 'pressure', 'value')
-        v.wheel_rear_right_pressure_unit = sg(tp, 'RR', 'pressure', 'unit')
-        v.wheel_rear_right_pressure_warning = sg(tp, 'RR', 'warning')
+        v.wheel_rear_right_pressure = sg(tp, "RR", "pressure", "value")
+        v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
+        v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
     return v
 
 
 class Client:
-    def __init__(self, email: str, password: str, pin: str, brand: Brand, disable_tls_verification: bool = False, dev_mode: bool = False, debug: bool = False):
-        self.api = API(email, password, pin, brand,
-                       disable_tls_verification=disable_tls_verification, dev_mode=dev_mode, debug=debug)
+    def __init__(
+        self,
+        email: str,
+        password: str,
+        pin: str,
+        brand: Brand,
+        disable_tls_verification: bool = False,
+        dev_mode: bool = False,
+        debug: bool = False,
+    ):
+        self.api = API(
+            email,
+            password,
+            pin,
+            brand,
+            disable_tls_verification=disable_tls_verification,
+            dev_mode=dev_mode,
+            debug=debug,
+        )
         self.vehicles: Dict[str, Vehicle] = {}
 
+    def set_debug(self, debug: bool):
+        """Sets debug logging on/off"""
+
+        self.api.set_debug(debug)
+
     def set_tls_verification(self, verify: bool):
-        '''Enable or disable TLS certificate verification'''
+        """Enable or disable TLS certificate verification"""
 
         self.api.set_tls_verification(verify)
 
     def refresh(self):
-        '''Refreshes all the vehicle data and caches it locally'''
+        """Refreshes all the vehicle data and caches it locally"""
 
         vehicles = self.api.list_vehicles()
 
         for x in vehicles:
             full_update_done = True
-            vin = x['vin']
+            vin = x["vin"]
 
             if not vin in self.vehicles:
-                vehicle = Vehicle(vin=vin, nickname=sg(x, 'nickname'), make=sg(x, 'make'), model=sg(
-                    x, 'modelDescription'), year=sg(x, 'tsoModelYear'), region=sg(x, 'soldRegion'))
+                vehicle = Vehicle(
+                    vin=vin,
+                    nickname=sg(x, "nickname"),
+                    make=sg(x, "make"),
+                    model=sg(x, "modelDescription"),
+                    year=sg(x, "tsoModelYear"),
+                    region=sg(x, "soldRegion"),
+                )
                 self.vehicles[vin] = vehicle
             else:
                 vehicle = self.vehicles[vin]
 
             info = self.api.get_vehicle(vin)
-            if not set(['vehicleInfo', 'evInfo']).intersection(info.keys()):
+            if not set(["vehicleInfo", "evInfo"]).intersection(info.keys()):
                 full_update_done = False
 
             _update_vehicle(vehicle, info)
@@ -238,12 +270,12 @@ class Client:
                 loc = self.api.get_vehicle_location(vin)
 
                 vehicle.location = Location(
-                    longitude=sg(loc, 'longitude'),
-                    latitude=sg(loc, 'latitude'),
-                    altitude=sg(loc, 'altitude'),
-                    bearing=sg(loc, 'bearing'),
-                    is_approximate=sg(loc, 'isLocationApprox'),
-                    updated=datetime.fromtimestamp(loc['timeStamp'] / 1000)
+                    longitude=sg(loc, "longitude"),
+                    latitude=sg(loc, "latitude"),
+                    altitude=sg(loc, "altitude"),
+                    bearing=sg(loc, "bearing"),
+                    is_approximate=sg(loc, "isLocationApprox"),
+                    updated=datetime.fromtimestamp(loc["timeStamp"] / 1000),
                 )
             except:
                 full_update_done = False
@@ -252,48 +284,60 @@ class Client:
                 s = self.api.get_vehicle_status(vin)
 
                 # Check at least one key is present in the response
-                if not set(['doors', 'windows', 'trunk', 'evRunning']).intersection(set(s.keys())):
+                if not set(["doors", "windows", "trunk", "evRunning"]).intersection(
+                    set(s.keys())
+                ):
                     full_update_done = False
 
-                if 'doors' in s:
+                if "doors" in s:
                     vehicle.door_driver_locked = sg_eq(
-                        s, 'LOCKED', 'doors', 'driver', 'status')
+                        s, "LOCKED", "doors", "driver", "status"
+                    )
                     vehicle.door_passenger_locked = sg_eq(
-                        s, 'LOCKED', 'doors', 'passenger', 'status')
+                        s, "LOCKED", "doors", "passenger", "status"
+                    )
                     vehicle.door_rear_left_locked = sg_eq(
-                        s, 'LOCKED', 'doors', 'leftRear', 'status')
+                        s, "LOCKED", "doors", "leftRear", "status"
+                    )
                     vehicle.door_rear_right_locked = sg_eq(
-                        s, 'LOCKED', 'doors', 'rightRear', 'status')
+                        s, "LOCKED", "doors", "rightRear", "status"
+                    )
 
-                if 'windows' in s:
+                if "windows" in s:
                     vehicle.window_driver_closed = sg_eq(
-                        s, 'CLOSED', 'windows', 'driver', 'status')
+                        s, "CLOSED", "windows", "driver", "status"
+                    )
                     vehicle.window_passenger_closed = sg_eq(
-                        s, 'CLOSED', 'windows', 'passenger', 'status')
+                        s, "CLOSED", "windows", "passenger", "status"
+                    )
 
-                vehicle.trunk_locked = sg_eq(s, 'LOCKED', 'trunk', 'status')
-                vehicle.ev_running = sg_eq(s, 'ON', 'evRunning', 'status')
+                vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
+                vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
             except:
                 full_update_done = False
 
             enabled_services = []
-            if 'services' in x:
-                enabled_services = [v['service'] for v in x['services']
-                                    if sg(v, 'vehicleCapable') and sg(v, 'serviceEnabled')]
+            if "services" in x:
+                enabled_services = [
+                    v["service"]
+                    for v in x["services"]
+                    if sg(v, "vehicleCapable") and sg(v, "serviceEnabled")
+                ]
 
             vehicle.supported_commands = [
-                v for v in enabled_services if v in COMMANDS_BY_NAME]
+                v for v in enabled_services if v in COMMANDS_BY_NAME
+            ]
 
             if full_update_done:
                 vehicle.last_full_update = datetime.now().astimezone()
 
     def get_vehicles(self):
-        '''Returns all vehicles data. Must execute refresh method before.'''
+        """Returns all vehicles data. Must execute refresh method before."""
 
         return self.vehicles
 
     def command(self, vin: str, cmd: Command):
-        '''Execute a given command against a car with a given VIN'''
+        """Execute a given command against a car with a given VIN"""
 
         return self.api.command(vin, cmd)
 
@@ -301,15 +345,20 @@ class Client:
         r = self.api.get_vehicle_notifications(vin)
 
         return {
-            x['correlationId']: (x['notification']['data']
-                                 ['status'].lower() == "success")
-            for x in r['notifications']['items']
+            x["correlationId"]: (
+                x["notification"]["data"]["status"].lower() == "success"
+            )
+            for x in r["notifications"]["items"]
         }
 
-    def command_verify(self, vin: str, cmd: Command,
-                       timeout: timedelta = timedelta(seconds=60),
-                       interval: timedelta = timedelta(seconds=2)):
-        '''Execute a given command against a car with a given VIN and poll for the status'''
+    def command_verify(
+        self,
+        vin: str,
+        cmd: Command,
+        timeout: timedelta = timedelta(seconds=60),
+        interval: timedelta = timedelta(seconds=2),
+    ):
+        """Execute a given command against a car with a given VIN and poll for the status"""
 
         id = self.command(vin, cmd)
 
@@ -320,4 +369,4 @@ class Client:
             if id in r:
                 return r[id]
 
-        raise Exception(f'unable to obtain command status: timed out (id {id})')
+        raise Exception(f"unable to obtain command status: timed out (id {id})")

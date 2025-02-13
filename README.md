@@ -10,12 +10,15 @@
 from py_uconnect import Client
 from py_uconnect.brands import BRANDS
 
-c = Client('foo@bar.com', 'very_secret', pin='1234', brand=brands.FIAT_EU)
-c.refresh()
-v = c.get_vehicles()
+# Create client
+client = Client('foo@bar.com', 'very_secret', pin='1234', brand=brands.FIAT_EU)
+# Fetch the vehicle data into cache
+client.refresh()
 
-for veh in v.values():
-    print(veh.to_json(indent=2))
+# List vehicles
+vehicles = client.get_vehicles()
+for vehicle in vehicles.values():
+    print(vehicle.to_json(indent=2))
 ```
 
 This would emit something similar to:
