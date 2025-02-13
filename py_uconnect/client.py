@@ -179,8 +179,15 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.oil_level = sg(vi, "oilLevel", "oilLevel")
 
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
+
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
+    # Some vehicles report -1
+    if v.time_to_fully_charge_l3 is not None and v.time_to_fully_charge_l3 < 0:
+        v.time_to_fully_charge_l3 = None
+    if v.time_to_fully_charge_l2 is not None and v.time_to_fully_charge_l2 < 0:
+        v.time_to_fully_charge_l2 = None
+
     v.odometer = sg(vi, "odometer", "odometer", "value")
     v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
 
@@ -275,7 +282,9 @@ class Client:
                     altitude=sg(loc, "altitude"),
                     bearing=sg(loc, "bearing"),
                     is_approximate=sg(loc, "isLocationApprox"),
-                    updated=datetime.fromtimestamp(loc["timeStamp"] / 1000),
+                    updated=datetime.fromtimestamp(
+                        loc["timeStamp"] / 1000
+                    ).astimezone(),
                 )
             except:
                 full_update_done = False
