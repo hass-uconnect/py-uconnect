@@ -94,7 +94,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"Login: accounts.webSdkBootstrap: {r}")
+        _LOGGER.debug(f"Login: accounts.webSdkBootstrap: {r.text}")
         r = r.json()
 
         if r["statusCode"] != 200:
@@ -114,7 +114,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"Login: accounts.login: {r}")
+        _LOGGER.debug(f"Login: accounts.login: {r.text}")
         r = r.json()
 
         if r["statusCode"] != 200:
@@ -135,7 +135,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"Login: accounts.getJWT: {r}")
+        _LOGGER.debug(f"Login: accounts.getJWT: {r.text}")
         r = r.json()
 
         if r["statusCode"] != 200:
@@ -159,7 +159,7 @@ class API:
             raise Exception(f"unable to obtain token: {exc}")
 
         r.raise_for_status()
-        _LOGGER.debug(f"Login: obtain token: {r}")
+        _LOGGER.debug(f"Login: obtain token: {r.text}")
         r = r.json()
 
         token = r.get("Token", None)
@@ -220,7 +220,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"list_vehicles: {r}")
+        _LOGGER.debug(f"list_vehicles: {r.text}")
         r = r.json()
 
         if not "vehicles" in r:
@@ -246,7 +246,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"get_vehicle ({vin}): {r}")
+        _LOGGER.debug(f"get_vehicle ({vin}): {r.text}")
         r = r.json()
 
         return r
@@ -270,7 +270,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"get_vehicle_status ({vin}): {r}")
+        _LOGGER.debug(f"get_vehicle_status ({vin}): {r.text}")
         r = r.json()
 
         return r
@@ -294,7 +294,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"get_vehicle_location ({vin}): {r}")
+        _LOGGER.debug(f"get_vehicle_location ({vin}): {r.text}")
         r = r.json()
 
         return r
@@ -320,7 +320,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"get_vehicle_notifications ({vin}): {r}")
+        _LOGGER.debug(f"get_vehicle_notifications ({vin}): {r.text}")
         r = r.json()
 
         return r
@@ -350,7 +350,7 @@ class API:
                 )
 
                 r.raise_for_status()
-                _LOGGER.debug(f"command auth ({vin} {cmd}): {r}")
+                _LOGGER.debug(f"command auth ({vin} {cmd}): {r.text}")
                 r = r.json()
             except Exception as e:
                 exc = e
@@ -378,7 +378,7 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"command execute ({vin} {cmd}): {r}")
+        _LOGGER.debug(f"command execute ({vin} {cmd}): {r.text}")
         r = r.json()
 
         if not "responseStatus" in r or r["responseStatus"] != "pending":
