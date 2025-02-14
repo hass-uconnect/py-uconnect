@@ -144,22 +144,13 @@ class API:
         if r["statusCode"] != 200:
             raise Exception(f"unable to obtain JWT: {r}")
 
-        exc = None
-        for url in self.brand.token_url:
-            try:
-                r = self.sess.request(
-                    method="POST",
-                    url=url,
-                    headers=self._default_aws_headers(self.brand.api.key)
-                    | {"content-type": "application/json"},
-                    json={"gigya_token": r["id_token"]},
-                )
-            except Exception as e:
-                exc = e
-            else:
-                break
-        else:
-            raise Exception(f"unable to obtain token: {exc}")
+        r = self.sess.request(
+            method="POST",
+            url=self.brand.token_url,
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            json={"gigya_token": r["id_token"]},
+        )
 
         r.raise_for_status()
         _LOGGER.debug(f"Login: obtain token: {r.text}")
@@ -340,27 +331,19 @@ class API:
 
         self._refresh_token_if_needed()
 
-        exc = None
-        for auth in self.brand.auth:
-            try:
-                r = self.sess.request(
-                    method="POST",
-                    url=auth.url + f"/v1/accounts/{self.uid}/ignite/pin/authenticate",
-                    headers=self._default_aws_headers(auth.token)
-                    | {"content-type": "application/json"},
-                    auth=self.aws_auth,
-                    json=data,
-                )
+        r = self.sess.request(
+            method="POST",
+            url=self.brand.auth.url
+            + f"/v1/accounts/{self.uid}/ignite/pin/authenticate",
+            headers=self._default_aws_headers(self.brand.auth.token)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
 
-                r.raise_for_status()
-                _LOGGER.debug(f"command auth ({vin} {cmd}): {r.text}")
-                r = r.json()
-            except Exception as e:
-                exc = e
-            else:
-                break
-        else:
-            raise Exception(f"Authentication failed: {exc}")
+        r.raise_for_status()
+        _LOGGER.debug(f"command auth ({vin} {cmd}): {r.text}")
+        r = r.json()
 
         if not "token" in r:
             raise Exception(f"authentication failed: no token found: {r}")

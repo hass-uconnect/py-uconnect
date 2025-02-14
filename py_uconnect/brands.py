@@ -59,9 +59,9 @@ class Brand:
     region: str
     login_api_key: str
     login_url: str
-    token_url: list[str]
+    token_url: str
     api: API
-    auth: list[Auth]
+    auth: Auth
     locale: str
 
     def __repr__(self):
@@ -73,9 +73,9 @@ FIAT_EU = Brand(
     region=REGION_EU,
     login_api_key="3_mOx_J2dRgjXYCdyhchv3b5lhi54eBcdCTX4BI8MORqmZCoQWhA0mV2PTlptLGUQI",
     login_url="https://loginmyuconnect.fiat.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -84,9 +84,9 @@ FIAT_US = Brand(
     region=REGION_US,
     login_api_key="3_WfFvlZJwcSdOD0LFQCngUV3W390R4Yshpuq3RsZvnV4VG0c9Q6R0RtDwcXc8dTrI",
     login_url="https://login-us.fiat.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_US,
 )
 
@@ -95,9 +95,9 @@ FIAT_ASIA = Brand(
     region=REGION_EU,
     login_api_key="4_YAQNaPqdPEUbbzhvhunKAA",
     login_url="https://login-iap.fiat.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -106,9 +106,9 @@ FIAT_CANADA = Brand(
     region=REGION_US,
     login_api_key="3_Ii2kSgQm4ljy19LIZeLwa76OlmWbpSa8w3aSP5VJdx19tub3oWxsFR-HEusDnUEh",
     login_url="https://login-stage-us.fiat.com",
-    token_url={TOKEN_URL_US_PREP, TOKEN_URL_US, TOKEN_URL_EU},
+    token_url=TOKEN_URL_US_PREP,
     api=API_US,
-    auth=[AUTH_US_PREP, AUTH_US, AUTH_EU],
+    auth=AUTH_US_PREP,
     locale=LOCALE_US,
 )
 
@@ -117,9 +117,9 @@ ALFA_ROMEO_US_CANADA = Brand(
     region=REGION_US,
     login_api_key="3_FSxGyaktviayTDRcgp9r9o2KjuFSrHT13wWNN9zPrvAGUCoXPDqoIPOwlBUhck4A",
     login_url="https://login-us.alfaromeo.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -128,9 +128,9 @@ ALFA_ROMEO_ASIA = Brand(
     region=REGION_EU,
     login_api_key="4_PSQeADnQ4p5XOaDgT0B5pA",
     login_url="https://login-iap.alfaromeo.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -139,9 +139,9 @@ ALFA_ROMEO_EU = Brand(
     region=REGION_EU,
     login_api_key="3_h8sj2VQI-KYXiunPq9a1QuAA4yWkY0r5AD1u8A8B1RPn_Cvl54xcoc2-InH5onJ1",
     login_url="https://login.alfaromeo.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -150,9 +150,9 @@ CHRYSLER_CANADA = Brand(
     region=REGION_US,
     login_api_key="3_gdhu-ur4jc2hEryDMnF4YPELkjzSi-invZTjop4isZu4ReHodVcuL44u93cOUqMC",
     login_url="https://login-stage-us.chrysler.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -161,9 +161,9 @@ CHRYSLER_US = Brand(
     region=REGION_US,
     login_api_key="3_cv4AzHkJh48-cqwaf_Ahcg1HnsmQqz1lm0sOdVdHW5FjT3m6SyywywOBaskBQqwn",
     login_url="https://login-us.chrysler.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -172,9 +172,9 @@ MASERATI_EU = Brand(
     region=REGION_EU,
     login_api_key="3_rNbVuhn2gIt3BnLjlGsJcMo26Lft3avDne_FLRT34Dy_9OxHtCVOnplwY436lGZa",
     login_url="https://login.maserati.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -183,9 +183,9 @@ MASERATI_ASIA = Brand(
     region=REGION_EU,
     login_api_key="4_uwF-in6KF-aMbEkPAb-fOg",
     login_url="https://accounts.au1.gigya.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -194,9 +194,9 @@ MASERATI_US_CANADA = Brand(
     region=REGION_US,
     login_api_key="3_nShL4-O7IL0OGqroO8AzwiRU0-ZHcBZ4TLBrh5MORusMo5XYxhCLXPYfjI4OOLOy",
     login_url="https://login-us.maserati.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -205,9 +205,9 @@ JEEP_EU = Brand(
     region=REGION_EU,
     login_api_key="3_ZvJpoiZQ4jT5ACwouBG5D1seGEntHGhlL0JYlZNtj95yERzqpH4fFyIewVMmmK7j",
     login_url="https://login.jeep.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -216,9 +216,9 @@ JEEP_US = Brand(
     region=REGION_US,
     login_api_key="3_5qxvrevRPG7--nEXe6huWdVvF5kV7bmmJcyLdaTJ8A45XUYpaR398QNeHkd7EB1X",
     login_url="https://login-us.jeep.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -227,9 +227,9 @@ JEEP_ASIA = Brand(
     region=REGION_EU,
     login_api_key="4_zqGYHC7rM8RCHHl4YFDebA",
     login_url="https://login-iap.jeep.com",
-    token_url=[TOKEN_URL_EU, TOKEN_URL_US],
+    token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=[AUTH_EU, AUTH_US],
+    auth=AUTH_EU,
     locale=LOCALE_EU,
 )
 
@@ -238,9 +238,9 @@ DODGE_US = Brand(
     region=REGION_US,
     login_api_key="4_dSRvo6ZIpp8_St7BF9VHGA",
     login_url="https://login-us.dodge.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
@@ -249,9 +249,9 @@ RAM_US = Brand(
     region=REGION_US,
     login_api_key="3_7YjzjoSb7dYtCP5-D6FhPsCciggJFvM14hNPvXN9OsIiV1ujDqa4fNltDJYnHawO",
     login_url="https://login-us.ramtrucks.com",
-    token_url=[TOKEN_URL_US, TOKEN_URL_EU],
+    token_url=TOKEN_URL_US,
     api=API_US,
-    auth=[AUTH_US, AUTH_EU],
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
