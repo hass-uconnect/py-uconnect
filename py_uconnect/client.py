@@ -361,6 +361,7 @@ class Client:
                 x["notification"]["data"]["status"].lower() == "success"
             )
             for x in r["notifications"]["items"]
+            if "correlationId" in x
         }
 
     def command_verify(
@@ -369,7 +370,7 @@ class Client:
         cmd: Command,
         timeout: timedelta = timedelta(seconds=60),
         interval: timedelta = timedelta(seconds=2),
-    ):
+    ) -> bool:
         """Execute a given command against a car with a given VIN and poll for the status"""
 
         id = self.command(vin, cmd)
