@@ -6,6 +6,9 @@ import base64
 import logging
 import http.client as http_client
 
+from dataclasses import dataclass, field
+from dataclasses_json import dataclass_json
+
 from datetime import datetime, timedelta
 from requests_auth_aws_sigv4 import AWSSigV4
 
@@ -13,6 +16,27 @@ from .command import Command
 from .brands import Brand
 
 _LOGGER = logging.getLogger("py_uconnect")
+
+
+@dataclass_json
+@dataclass
+class ChargingLevel:
+    name: str
+
+
+CHARGING_LEVEL_ONE = ChargingLevel("LEVEL_ONE")
+CHARGING_LEVEL_TWO = ChargingLevel("LEVEL_TWO")
+CHARGING_LEVEL_THREE = ChargingLevel("LEVEL_THREE")
+CHARGING_LEVEL_FOUR = ChargingLevel("LEVEL_FOUR")
+CHARGING_LEVEL_FIVE = ChargingLevel("LEVEL_FIVE")
+
+CHARGING_LEVELS = [
+    CHARGING_LEVEL_ONE,
+    CHARGING_LEVEL_TWO,
+    CHARGING_LEVEL_THREE,
+    CHARGING_LEVEL_FOUR,
+    CHARGING_LEVEL_FIVE,
+]
 
 
 class API:
@@ -319,12 +343,7 @@ class API:
 
         return r
 
-    def command(self, vin: str, cmd: Command):
-        """Sends given command to the vehicle with a given VIN"""
-
-        if self.dev_mode:
-            return
-
+    def _pin_auth(self) -> str:
         data = {
             "pin": base64.b64encode(self.pin.encode()).decode(encoding="utf-8"),
         }
@@ -342,15 +361,25 @@ class API:
         )
 
         r.raise_for_status()
-        _LOGGER.debug(f"command auth ({vin} {cmd}): {r.text}")
+        _LOGGER.debug(f"pin auth: {r.text}")
         r = r.json()
 
         if not "token" in r:
             raise Exception(f"authentication failed: no token found: {r}")
 
+        return r["token"]
+
+    def command(self, vin: str, cmd: Command):
+        """Sends given command to the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
+
+        pin_auth = self._pin_auth()
+
         data = {
             "command": cmd.name,
-            "pinAuth": r["token"],
+            "pinAuth": pin_auth,
         }
 
         r = self.sess.request(
@@ -370,5 +399,38 @@ class API:
         if not "responseStatus" in r or r["responseStatus"] != "pending":
             error = r.get("debugMsg", "unknown error")
             raise Exception(f"command queuing failed: {error} ({r})")
+
+        return r["correlationId"]
+
+    def set_charging_level(self, vin: str, level: ChargingLevel):
+        """Sets the charging level on the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
+
+        pin_auth = self._pin_auth()
+
+        data = {
+            "preference": level.name,
+            "pinAuth": pin_auth,
+        }
+
+        r = self.sess.request(
+            method="PUT",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ev/charge/preference/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"set charging level ({vin} {level.name}): {r.text}")
+        r = r.json()
+
+        if not "correlationId" in r:
+            error = r.get("debugMsg", "unknown error")
+            raise Exception(f"set charging level failed: {error} ({r})")
 
         return r["correlationId"]

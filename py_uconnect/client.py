@@ -4,7 +4,7 @@ from typing import Dict
 from datetime import datetime, timedelta
 from time import sleep
 
-from .api import API
+from .api import API, ChargingLevel, CHARGING_LEVELS
 from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
@@ -54,14 +54,6 @@ CHARGING_LEVELS = {
     "LEVEL_1": 1,
     "LEVEL_2": 2,
     "LEVEL_3": 3,
-}
-
-CHARGING_LEVEL_PREFS = {
-    "LEVEL_ONE": 1,
-    "LEVEL_TWO": 2,
-    "LEVEL_THREE": 3,
-    "LEVEL_FOUR": 4,
-    "LEVEL_FIVE": 5,
 }
 
 
@@ -157,9 +149,8 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
     v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
     v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
-    v.charging_level_preference = CHARGING_LEVEL_PREFS.get(
-        sg(ev, "chargePowerPreference"), None
-    )
+    v.charging_level_preference = sg(ev, "chargePowerPreference")
+
     v.plugged_in = sg(batt, "plugInStatus")
     v.state_of_charge = sg(batt, "stateOfCharge")
 
@@ -348,11 +339,6 @@ class Client:
 
         return self.vehicles
 
-    def command(self, vin: str, cmd: Command):
-        """Execute a given command against a car with a given VIN"""
-
-        return self.api.command(vin, cmd)
-
     def _get_commands_statuses(self, vin: str) -> dict:
         r = self.api.get_vehicle_notifications(vin)
 
@@ -364,17 +350,13 @@ class Client:
             if "correlationId" in x
         }
 
-    def command_verify(
+    def _poll_correlation_id(
         self,
         vin: str,
-        cmd: Command,
+        id: str,
         timeout: timedelta = timedelta(seconds=60),
         interval: timedelta = timedelta(seconds=2),
     ) -> bool:
-        """Execute a given command against a car with a given VIN and poll for the status"""
-
-        id = self.command(vin, cmd)
-
         start = datetime.now()
         while datetime.now() - start < timeout:
             sleep(interval.seconds)
@@ -382,4 +364,30 @@ class Client:
             if id in r:
                 return r[id]
 
-        raise Exception(f"unable to obtain command status: timed out (id {id})")
+        raise Exception(f"unable to obtain execution status: timed out (id {id})")
+
+    def command(self, vin: str, cmd: Command):
+        """Execute a given command against a car with a given VIN"""
+
+        return self.api.command(vin, cmd)
+
+    def command_verify(
+        self,
+        vin: str,
+        cmd: Command,
+    ) -> bool:
+        """Execute a given command against a car with a given VIN and poll for the status"""
+
+        id = self.command(vin, cmd)
+        return self._poll_correlation_id(vin, id)
+
+    def set_charging_level(self, vin: str, level: ChargingLevel):
+        """Set the charging level on the vehicle with a given VIN"""
+
+        return self.api.set_charging_level(vin, level)
+
+    def set_charging_level_verify(self, vin: str, level: ChargingLevel):
+        """Set the charging level on the vehicle with a given VIN and poll for the status"""
+
+        id = self.api.set_charging_level(vin, level)
+        return self._poll_correlation_id(vin, id)
