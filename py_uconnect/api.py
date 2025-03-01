@@ -38,6 +38,8 @@ CHARGING_LEVELS = [
     CHARGING_LEVEL_FIVE,
 ]
 
+CHARGING_LEVELS_BY_NAME = {x.name: x for x in CHARGING_LEVELS}
+
 
 class API:
     def __init__(

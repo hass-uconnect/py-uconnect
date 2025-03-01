@@ -104,7 +104,7 @@ class Vehicle:
     ev_running: bool = None
     charging: bool = None
     charging_level: int = None
-    charging_level_preference: int = None
+    charging_level_preference: str = None
     state_of_charge: int = None
     time_to_fully_charge_l3: int = None
     time_to_fully_charge_l2: int = None
