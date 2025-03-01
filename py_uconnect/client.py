@@ -135,7 +135,9 @@ class Vehicle:
 
     location: Location = None
     supported_commands: list[str] = field(default_factory=list)
-    last_full_update: datetime = None
+
+    timestamp_info: datetime = None
+    timestamp_status: datetime = None
 
     def __repr__(self):
         return f"{self.vin} (nick: {self.nickname})"
@@ -201,6 +203,8 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
         v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
+    v.timestamp_info = datetime.fromtimestamp(p["timestamp"] / 1000).astimezone()
+
     return v
 
 
@@ -245,7 +249,6 @@ class Client:
         vehicles = self.api.list_vehicles()
 
         for x in vehicles:
-            full_update_done = True
             vin = x["vin"]
 
             if not vin in self.vehicles:
@@ -262,9 +265,6 @@ class Client:
                 vehicle = self.vehicles[vin]
 
             info = self.api.get_vehicle(vin)
-            if not set(["vehicleInfo", "evInfo"]).intersection(info.keys()):
-                full_update_done = False
-
             _update_vehicle(vehicle, info)
 
             try:
@@ -281,16 +281,10 @@ class Client:
                     ).astimezone(),
                 )
             except:
-                full_update_done = False
+                pass
 
             try:
                 s = self.api.get_vehicle_status(vin)
-
-                # Check at least one key is present in the response
-                if not set(["doors", "windows", "trunk", "evRunning"]).intersection(
-                    set(s.keys())
-                ):
-                    full_update_done = False
 
                 if "doors" in s:
                     vehicle.door_driver_locked = sg_eq(
@@ -316,8 +310,12 @@ class Client:
 
                 vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
                 vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
+
+                vehicle.timestamp_status = datetime.fromtimestamp(
+                    s["timestamp"] / 1000
+                ).astimezone()
             except:
-                full_update_done = False
+                pass
 
             enabled_services = []
             if "services" in x:
@@ -330,9 +328,6 @@ class Client:
             vehicle.supported_commands = [
                 v for v in enabled_services if v in COMMANDS_BY_NAME
             ]
-
-            if full_update_done:
-                vehicle.last_full_update = datetime.now().astimezone()
 
     def get_vehicles(self):
         """Returns all vehicles data. Must execute refresh method before."""
