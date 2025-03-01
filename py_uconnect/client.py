@@ -152,6 +152,8 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
     v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
     v.charging_level_preference = sg(ev, "chargePowerPreference")
+    if v.charging_level_preference == "NOT_USED_VALUE":
+        v.charging_level_preference = None
 
     v.plugged_in = sg(batt, "plugInStatus")
     v.state_of_charge = sg(batt, "stateOfCharge")
@@ -162,10 +164,10 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         vi, "distanceToService", "distanceToService", "unit"
     )
     v.distance_to_empty = sg(vi, "fuel", "distanceToEmpty", "value") or sg(
-        ev, "distanceToEmpty", "value"
+        batt, "distanceToEmpty", "value"
     )
     v.distance_to_empty_unit = sg(vi, "fuel", "distanceToEmpty", "unit") or sg(
-        ev, "distanceToEmpty", "unit"
+        batt, "distanceToEmpty", "unit"
     )
     v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
     v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
