@@ -163,11 +163,11 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.distance_to_service_unit = sg(
         vi, "distanceToService", "distanceToService", "unit"
     )
-    v.distance_to_empty = sg(vi, "fuel", "distanceToEmpty", "value") or sg(
-        batt, "distanceToEmpty", "value"
+    v.distance_to_empty = sg(batt, "distanceToEmpty", "value") or sg(
+        vi, "fuel", "distanceToEmpty", "value"
     )
-    v.distance_to_empty_unit = sg(vi, "fuel", "distanceToEmpty", "unit") or sg(
-        batt, "distanceToEmpty", "unit"
+    v.distance_to_empty_unit = sg(batt, "distanceToEmpty", "unit") or sg(
+        vi, "fuel", "distanceToEmpty", "unit"
     )
     v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
     v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
