@@ -86,7 +86,7 @@ FIAT_US = Brand(
     login_url="https://login-us.fiat.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_EU,
+    auth=AUTH_US,
     locale=LOCALE_US,
 )
 
