@@ -310,6 +310,9 @@ class Client:
                         s, "CLOSED", "windows", "passenger", "status"
                     )
 
+                if "engine" in s:
+                    vehicle.ignition_on = sg_eq(s, "ON", "engine", "status")
+
                 vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
                 vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
 
