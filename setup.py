@@ -44,6 +44,6 @@ setup(
     name="py-uconnect",
     packages=find_packages(include=["py_uconnect", "py_uconnect.*"]),
     url="https://github.com/hass-uconnect/py-uconnect",
-    version="0.3.5",
+    version="0.3.7",
     zip_safe=False,
 )
