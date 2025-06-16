@@ -7,8 +7,7 @@
 ## Usage
 
 ```python
-from py_uconnect import Client
-import py_uconnect.brands
+from py_uconnect import brands, Client
 
 # Create client
 client = Client('foo@bar.com', 'very_secret', pin='1234', brand=brands.FIAT_EU)
