@@ -9,7 +9,7 @@ from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
 
-def convert(v):
+def convert(v) -> None | int | float | str:
     if not isinstance(v, str):
         return v
 
@@ -27,7 +27,7 @@ def convert(v):
     return v
 
 
-def sg(dct: dict, *keys):
+def sg(dct: dict, *keys) -> None | int | float | str:
     if not isinstance(dct, dict):
         return None
 
@@ -60,12 +60,12 @@ CHARGING_LEVELS = {
 @dataclass_json
 @dataclass
 class Location:
-    longitude: float = None
-    latitude: float = None
-    altitude: float = None
-    bearing: float = None
-    is_approximate: bool = None
-    updated: datetime = None
+    longitude: float | None = None
+    latitude: float | None = None
+    altitude: float | None = None
+    bearing: float | None = None
+    is_approximate: bool | None = None
+    updated: datetime | None = None
 
     def __repr__(self):
         return f"lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})"
@@ -84,60 +84,62 @@ class Vehicle:
     region: str
 
     # Status
-    ignition_on: bool = None
-    trunk_locked: bool = None
+    ignition_on: bool | None = None
+    trunk_locked: bool | None = None
 
-    odometer: float = None
-    odometer_unit: str = None
-    days_to_service: int = None
-    distance_to_service: int = None
-    distance_to_service_unit: str = None
-    distance_to_empty: int = None
-    distance_to_empty_unit: str = None
-    battery_voltage: float = None
-    oil_level: int = None
-    fuel_low: bool = None
-    fuel_amount: int = None
+    odometer: float | None = None
+    odometer_unit: str | None = None
+    days_to_service: int | None = None
+    distance_to_service: int | None = None
+    distance_to_service_unit: str | None = None
+    distance_to_empty: int | None = None
+    distance_to_empty_unit: str | None = None
+    range_gas: int | None = None
+    range_total: int | None = None
+    battery_voltage: float | None = None
+    oil_level: int | None = None
+    fuel_low: bool | None = None
+    fuel_amount: int | None = None
 
     # EV related
-    plugged_in: bool = None
-    ev_running: bool = None
-    charging: bool = None
-    charging_level: int = None
-    charging_level_preference: str = None
-    state_of_charge: int = None
-    time_to_fully_charge_l3: int = None
-    time_to_fully_charge_l2: int = None
+    plugged_in: bool | None = None
+    ev_running: bool | None = None
+    charging: bool | None = None
+    charging_level: int | None = None
+    charging_level_preference: str | None = None
+    state_of_charge: int | None = None
+    time_to_fully_charge_l3: int | None = None
+    time_to_fully_charge_l2: int | None = None
 
     # Wheels
-    wheel_front_left_pressure: float = None
-    wheel_front_left_pressure_unit: str = None
-    wheel_front_left_pressure_warning: bool = None
-    wheel_front_right_pressure: float = None
-    wheel_front_right_pressure_unit: str = None
-    wheel_front_right_pressure_warning: bool = None
-    wheel_rear_left_pressure: float = None
-    wheel_rear_left_pressure_unit: str = None
-    wheel_rear_left_pressure_warning: bool = None
-    wheel_rear_right_pressure: float = None
-    wheel_rear_right_pressure_unit: str = None
-    wheel_rear_right_pressure_warning: bool = None
+    wheel_front_left_pressure: float | None = None
+    wheel_front_left_pressure_unit: str | None = None
+    wheel_front_left_pressure_warning: bool | None = None
+    wheel_front_right_pressure: float | None = None
+    wheel_front_right_pressure_unit: str | None = None
+    wheel_front_right_pressure_warning: bool | None = None
+    wheel_rear_left_pressure: float | None = None
+    wheel_rear_left_pressure_unit: str | None = None
+    wheel_rear_left_pressure_warning: bool | None = None
+    wheel_rear_right_pressure: float | None = None
+    wheel_rear_right_pressure_unit: str | None = None
+    wheel_rear_right_pressure_warning: bool | None = None
 
     # Doors
-    door_driver_locked: bool = None
-    door_passenger_locked: bool = None
-    door_rear_left_locked: bool = None
-    door_rear_right_locked: bool = None
+    door_driver_locked: bool | None = None
+    door_passenger_locked: bool | None = None
+    door_rear_left_locked: bool | None = None
+    door_rear_right_locked: bool | None = None
 
     # Windows
-    window_driver_closed: bool = None
-    window_passenger_closed: bool = None
+    window_driver_closed: bool | None = None
+    window_passenger_closed: bool | None = None
 
-    location: Location = None
+    location: Location | None = None
     supported_commands: list[str] = field(default_factory=list)
 
-    timestamp_info: datetime = None
-    timestamp_status: datetime = None
+    timestamp_info: datetime | None = None
+    timestamp_status: datetime | None = None
 
     def __repr__(self):
         return f"{self.vin} (nick: {self.nickname})"
@@ -169,6 +171,9 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.distance_to_empty_unit = sg(batt, "distanceToEmpty", "unit") or sg(
         vi, "fuel", "distanceToEmpty", "unit"
     )
+    v.range_gas = sg(batt, "gasRange")
+    v.range_total = sg(batt, "totalRange")
+
     v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
     v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
     v.oil_level = sg(vi, "oilLevel", "oilLevel")
