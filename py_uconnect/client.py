@@ -95,7 +95,9 @@ class Vehicle:
     distance_to_empty: int | None = None
     distance_to_empty_unit: str | None = None
     range_gas: int | None = None
+    range_gas_unit: str | None = None
     range_total: int | None = None
+    range_total_unit: str | None = None
     battery_voltage: float | None = None
     oil_level: int | None = None
     fuel_low: bool | None = None
@@ -172,7 +174,9 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         vi, "fuel", "distanceToEmpty", "unit"
     )
     v.range_gas = sg(batt, "gasRange")
+    v.range_gas_unit = v.distance_to_empty_unit
     v.range_total = sg(batt, "totalRange")
+    v.range_total_unit = v.distance_to_empty_unit
 
     v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
     v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
