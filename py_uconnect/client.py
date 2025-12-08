@@ -49,6 +49,15 @@ def sg_eq(dct: dict, expect, *keys):
     return v == expect
 
 
+def sg_eq_str(dct: dict, expect: str, *keys):
+    v = sg(dct, *keys)
+
+    if not isinstance(v, str):
+        return False
+
+    return v.lower() == expect.lower()
+
+
 CHARGING_LEVELS = {
     "DEFAULT": 0,
     "LEVEL_1": 1,
@@ -351,10 +360,12 @@ class Client:
     def _get_commands_statuses(self, vin: str) -> dict:
         r = self.api.get_vehicle_notifications(vin)
 
+        if not "notifications" in r or not "items" in r["notifications"]:
+            return {}
+
         return {
-            x["correlationId"]: (
-                x["notification"]["data"]["status"].lower() == "success"
-            )
+            x["correlationId"]:
+                sg_eq_str(x, "success", "notification", "data", "status")
             for x in r["notifications"]["items"]
             if "correlationId" in x
         }
