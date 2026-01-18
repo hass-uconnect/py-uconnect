@@ -27,7 +27,7 @@ def convert(v) -> None | int | float | str:
     return v
 
 
-def sg(dct: dict, *keys) -> None | int | float | str:
+def sg(dct: dict, *keys) -> None | int | float | dict | str:
     if not isinstance(dct, dict):
         return None
 
@@ -195,6 +195,7 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
 
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
+
     # Some vehicles report -1
     if v.time_to_fully_charge_l3 is not None and v.time_to_fully_charge_l3 < 0:
         v.time_to_fully_charge_l3 = None
@@ -223,7 +224,8 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
         v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
-    v.timestamp_info = datetime.fromtimestamp(p["timestamp"] / 1000).astimezone()
+    v.timestamp_info = datetime.fromtimestamp(
+        p["timestamp"] / 1000).astimezone() if "timestamp" in p else None
 
     return v
 
@@ -290,15 +292,17 @@ class Client:
             try:
                 loc = self.api.get_vehicle_location(vin)
 
+                updated = datetime.fromtimestamp(
+                    loc["timeStamp"] / 1000
+                ).astimezone() if "timeStamp" in loc else None
+
                 vehicle.location = Location(
                     longitude=sg(loc, "longitude"),
                     latitude=sg(loc, "latitude"),
                     altitude=sg(loc, "altitude"),
                     bearing=sg(loc, "bearing"),
                     is_approximate=sg(loc, "isLocationApprox"),
-                    updated=datetime.fromtimestamp(
-                        loc["timeStamp"] / 1000
-                    ).astimezone(),
+                    updated=updated,
                 )
             except:
                 pass
@@ -336,7 +340,7 @@ class Client:
 
                 vehicle.timestamp_status = datetime.fromtimestamp(
                     s["timestamp"] / 1000
-                ).astimezone()
+                ).astimezone() if "timestamp" in s else None
             except:
                 pass
 
