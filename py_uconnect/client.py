@@ -18,10 +18,10 @@ def convert(v) -> None | int | float | str:
 
     try:
         v = int(v)
-    except:
+    except (ValueError, TypeError):
         try:
             v = float(v)
-        except:
+        except (ValueError, TypeError):
             pass
 
     return v
@@ -304,7 +304,7 @@ class Client:
                     is_approximate=sg(loc, "isLocationApprox"),
                     updated=updated,
                 )
-            except:
+            except Exception:
                 pass
 
             try:
@@ -341,7 +341,7 @@ class Client:
                 vehicle.timestamp_status = datetime.fromtimestamp(
                     s["timestamp"] / 1000
                 ).astimezone() if "timestamp" in s else None
-            except:
+            except Exception:
                 pass
 
             enabled_services = []
