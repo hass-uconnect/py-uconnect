@@ -58,13 +58,13 @@ class API:
         self.brand = brand
         self.dev_mode = dev_mode
 
-        self.uid: str = None
-        self.aws_auth: AWSSigV4 = None
+        self.uid: str | None = None
+        self.aws_auth: AWSSigV4 | None = None
 
         self.sess = requests.Session()
         self.cognito_client = None
 
-        self.expire_time: datetime = None
+        self.expire_time: datetime | None = None
 
         if disable_tls_verification:
             self.sess.verify = False
