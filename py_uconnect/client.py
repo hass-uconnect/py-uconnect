@@ -224,8 +224,11 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
         v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
-    v.timestamp_info = datetime.fromtimestamp(
-        p["timestamp"] / 1000).astimezone() if "timestamp" in p else None
+    v.timestamp_info = (
+        datetime.fromtimestamp(p["timestamp"] / 1000).astimezone()
+        if "timestamp" in p
+        else None
+    )
 
     return v
 
@@ -292,9 +295,11 @@ class Client:
             try:
                 loc = self.api.get_vehicle_location(vin)
 
-                updated = datetime.fromtimestamp(
-                    loc["timeStamp"] / 1000
-                ).astimezone() if "timeStamp" in loc else None
+                updated = (
+                    datetime.fromtimestamp(loc["timeStamp"] / 1000).astimezone()
+                    if "timeStamp" in loc
+                    else None
+                )
 
                 vehicle.location = Location(
                     longitude=sg(loc, "longitude"),
@@ -338,9 +343,11 @@ class Client:
                 vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
                 vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
 
-                vehicle.timestamp_status = datetime.fromtimestamp(
-                    s["timestamp"] / 1000
-                ).astimezone() if "timestamp" in s else None
+                vehicle.timestamp_status = (
+                    datetime.fromtimestamp(s["timestamp"] / 1000).astimezone()
+                    if "timestamp" in s
+                    else None
+                )
             except Exception:
                 pass
 
@@ -368,8 +375,9 @@ class Client:
             return {}
 
         return {
-            x["correlationId"]:
-                sg_eq_str(x, "success", "notification", "data", "status")
+            x["correlationId"]: sg_eq_str(
+                x, "success", "notification", "data", "status"
+            )
             for x in r["notifications"]["items"]
             if "correlationId" in x
         }
