@@ -243,7 +243,7 @@ class API:
         _LOGGER.debug(f"list_vehicles: {r.text}")
         r = r.json()
 
-        if not "vehicles" in r:
+        if "vehicles" not in r:
             raise Exception(f"incorrect response: {r}")
 
         return r["vehicles"]
@@ -366,7 +366,7 @@ class API:
         _LOGGER.debug(f"pin auth: {r.text}")
         r = r.json()
 
-        if not "token" in r:
+        if "token" not in r:
             raise Exception(f"authentication failed: no token found: {r}")
 
         return r["token"]
@@ -398,7 +398,7 @@ class API:
         _LOGGER.debug(f"command execute ({vin} {cmd}): {r.text}")
         r = r.json()
 
-        if not "responseStatus" in r or r["responseStatus"] != "pending":
+        if "responseStatus" not in r or r["responseStatus"] != "pending":
             error = r.get("debugMsg", "unknown error")
             raise Exception(f"command queuing failed: {error} ({r})")
 
@@ -431,7 +431,7 @@ class API:
         _LOGGER.debug(f"set charging level ({vin} {level.name}): {r.text}")
         r = r.json()
 
-        if not "correlationId" in r:
+        if "correlationId" not in r:
             error = r.get("debugMsg", "unknown error")
             raise Exception(f"set charging level failed: {error} ({r})")
 

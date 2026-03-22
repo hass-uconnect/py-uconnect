@@ -273,7 +273,7 @@ class Client:
         for x in vehicles:
             vin = x["vin"]
 
-            if not vin in self.vehicles:
+            if vin not in self.vehicles:
                 vehicle = Vehicle(
                     vin=vin,
                     nickname=sg(x, "nickname"),
@@ -364,7 +364,7 @@ class Client:
     def _get_commands_statuses(self, vin: str) -> dict:
         r = self.api.get_vehicle_notifications(vin)
 
-        if not "notifications" in r or not "items" in r["notifications"]:
+        if "notifications" not in r or "items" not in r["notifications"]:
             return {}
 
         return {
