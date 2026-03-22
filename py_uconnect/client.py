@@ -4,7 +4,7 @@ from typing import Dict
 from datetime import datetime, timedelta
 from time import sleep
 
-from .api import API, ChargingLevel, CHARGING_LEVELS
+from .api import API, ChargingLevel
 from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
