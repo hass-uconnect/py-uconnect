@@ -6,7 +6,7 @@ import base64
 import logging
 import http.client as http_client
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from datetime import datetime, timedelta
