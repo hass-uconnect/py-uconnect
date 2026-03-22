@@ -5,7 +5,7 @@ from py_uconnect.brands import BRANDS
 from sys import argv, exit
 
 
-if len(argv) < 3:
+if len(argv) < 4:
     print('Incorrect arguments. Pass brand, login and password as arguments.')
     exit(1)
 
