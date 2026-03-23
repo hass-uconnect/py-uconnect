@@ -505,7 +505,7 @@ class API:
         r = self.sess.request(
             method="POST",
             url=self.brand.api.url
-            + f"/v1/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
+            + f"/{cmd.api_version}/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
