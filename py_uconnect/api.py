@@ -576,7 +576,9 @@ class API:
 
         return r["correlationId"]
 
-    def set_charging_level(self, vin: str, level: ChargingLevel):
+    def set_charging_level(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Sets the charging level on the vehicle with a given VIN"""
 
         if self.dev_mode:
@@ -588,6 +590,9 @@ class API:
             "preference": level.name,
             "pinAuth": pin_auth,
         }
+
+        if max_soc is not None:
+            data["maxSOC"] = max_soc
 
         r = self.sess.request(
             method="PUT",

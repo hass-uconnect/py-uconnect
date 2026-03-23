@@ -466,13 +466,17 @@ class Client:
         id = self.api.set_charge_schedule(vin, schedule)
         return self._poll_correlation_id(vin, id)
 
-    def set_charging_level(self, vin: str, level: ChargingLevel):
+    def set_charging_level(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Set the charging level on the vehicle with a given VIN"""
 
-        return self.api.set_charging_level(vin, level)
+        return self.api.set_charging_level(vin, level, max_soc=max_soc)
 
-    def set_charging_level_verify(self, vin: str, level: ChargingLevel):
+    def set_charging_level_verify(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Set the charging level on the vehicle with a given VIN and poll for the status"""
 
-        id = self.api.set_charging_level(vin, level)
+        id = self.api.set_charging_level(vin, level, max_soc=max_soc)
         return self._poll_correlation_id(vin, id)
