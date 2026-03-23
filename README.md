@@ -92,3 +92,24 @@ This would emit something similar to:
   ]
 }
 ```
+
+## Additional API methods
+
+```python
+# Vehicle health report
+report = client.get_vehicle_health_report(vin)
+
+# Maintenance history
+history = client.get_maintenance_history(vin)
+
+# Eco-coaching trip data
+last_trip = client.get_eco_coaching_last_trip(vin)
+trips = client.get_eco_coaching_trips(vin)
+
+# Vehicle image (dedicated endpoint)
+image = client.get_vehicle_image(vin)
+
+# EV charge schedules
+schedules = client.get_charge_schedules(vin)
+client.set_charge_schedule(vin, schedule)
+```
