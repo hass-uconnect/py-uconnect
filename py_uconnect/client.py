@@ -441,6 +441,22 @@ class Client:
 
         return self.api.get_vehicle_health_report(vin)
 
+    def get_charge_schedules(self, vin: str) -> dict:
+        """Get EV charge schedules for a vehicle with a given VIN"""
+
+        return self.api.get_charge_schedules(vin)
+
+    def set_charge_schedule(self, vin: str, schedule: dict):
+        """Set an EV charge schedule on the vehicle with a given VIN"""
+
+        return self.api.set_charge_schedule(vin, schedule)
+
+    def set_charge_schedule_verify(self, vin: str, schedule: dict) -> bool:
+        """Set an EV charge schedule and poll for the status"""
+
+        id = self.api.set_charge_schedule(vin, schedule)
+        return self._poll_correlation_id(vin, id)
+
     def set_charging_level(self, vin: str, level: ChargingLevel):
         """Set the charging level on the vehicle with a given VIN"""
 

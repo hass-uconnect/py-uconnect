@@ -522,6 +522,60 @@ class API:
 
         return r["correlationId"]
 
+    def get_charge_schedules(self, vin: str) -> dict:
+        """Gets EV charge schedules for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_charge_schedules_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_charge_schedules ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def set_charge_schedule(self, vin: str, schedule: dict):
+        """Sets an EV charge schedule on the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
+
+        pin_auth = self._pin_auth()
+
+        data = schedule | {"pinAuth": pin_auth}
+
+        r = self.sess.request(
+            method="PUT",
+            url=self.brand.api.url
+            + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"set_charge_schedule ({vin}): {r.text}")
+        r = r.json()
+
+        if "correlationId" not in r:
+            error = r.get("debugMsg", "unknown error")
+            raise Exception(f"set charge schedule failed: {error} ({r})")
+
+        return r["correlationId"]
+
     def set_charging_level(self, vin: str, level: ChargingLevel):
         """Sets the charging level on the vehicle with a given VIN"""
 
