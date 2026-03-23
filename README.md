@@ -53,6 +53,9 @@ This would emit something similar to:
   "state_of_charge": 63,
   "time_to_fully_charge_l3": 41,
   "time_to_fully_charge_l2": 96,
+  "time_to_fully_charge_l1": null,
+  "ev_head_seat": null,
+  "ev_cabin_cond": null,
   "wheel_front_left_pressure": null,
   "wheel_front_left_pressure_unit": "kPa",
   "wheel_front_left_pressure_warning": false,
@@ -112,4 +115,7 @@ image = client.get_vehicle_image(vin)
 # EV charge schedules
 schedules = client.get_charge_schedules(vin)
 client.set_charge_schedule(vin, schedule)
+
+# Remote operation status (check if a command succeeded)
+status = client.get_remote_operation_status(vin, correlation_id)
 ```

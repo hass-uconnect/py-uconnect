@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Command:
     name: str
     url: str = "remote"
+    api_version: str = "v1"
 
     def __repr__(self):
         return self.name
@@ -12,22 +13,25 @@ class Command:
 
 COMMAND_ENGINE_ON = Command(name="REON")
 COMMAND_ENGINE_OFF = Command(name="REOFF")
-COMMAND_COMFORT_ON = Command(name="ROCOMFORTON")
-COMMAND_COMFORT_OFF = Command(name="ROCOMFORTOFF")
-COMMAND_HVAC_ON = Command(name="ROHVACON")
-COMMAND_HVAC_OFF = Command(name="ROHVACOFF")
+COMMAND_COMFORT_ON = Command(name="ROCOMFORTON", api_version="v2")
+COMMAND_COMFORT_OFF = Command(name="ROCOMFORTOFF", api_version="v2")
+COMMAND_HVAC_ON = Command(name="ROHVACON", api_version="v2")
+COMMAND_HVAC_OFF = Command(name="ROHVACOFF", api_version="v2")
 COMMAND_PRECOND_ON = Command(name="ROPRECOND")
 COMMAND_PRECOND_OFF = Command(name="ROPRECOND_OFF")
 COMMAND_LIGHTS_HORN = Command(name="HBLF")
 COMMAND_LIGHTS = Command(name="ROLIGHTS")
 COMMAND_DOORS_UNLOCK = Command(name="RDU")
 COMMAND_DOORS_LOCK = Command(name="RDL")
-COMMAND_TRUNK_UNLOCK = Command(name="ROTRUNKUNLOCK")
-COMMAND_TRUNK_LOCK = Command(name="ROTRUNKLOCK")
-COMMAND_LIFTGATE_UNLOCK = Command(name="ROLIFTGATEUNLOCK")
-COMMAND_LIFTGATE_LOCK = Command(name="ROLIFTGATELOCK")
+COMMAND_TRUNK_UNLOCK = Command(name="ROTRUNKUNLOCK", api_version="v2")
+COMMAND_TRUNK_LOCK = Command(name="ROTRUNKLOCK", api_version="v2")
+COMMAND_LIFTGATE_UNLOCK = Command(name="ROLIFTGATEUNLOCK", api_version="v2")
+COMMAND_LIFTGATE_LOCK = Command(name="ROLIFTGATELOCK", api_version="v2")
+COMMAND_CABIN_VENTILATION = Command(name="ACV", api_version="v2")
 COMMAND_CHARGE = Command(name="CNOW", url="ev/chargenow")
+COMMAND_CHARGE_V4 = Command(name="CNOW2", url="ev/chargenow", api_version="v4")
 COMMAND_DEEP_REFRESH = Command(name="DEEPREFRESH", url="ev")
+COMMAND_DEEP_REFRESH_V2 = Command(name="DEEPREFRESH2", url="ev", api_version="v2")
 COMMAND_REFRESH_LOCATION = Command(name="VF", url="location")
 
 COMMANDS = [
@@ -47,8 +51,11 @@ COMMANDS = [
     COMMAND_TRUNK_LOCK,
     COMMAND_LIFTGATE_UNLOCK,
     COMMAND_LIFTGATE_LOCK,
+    COMMAND_CABIN_VENTILATION,
     COMMAND_CHARGE,
+    COMMAND_CHARGE_V4,
     COMMAND_DEEP_REFRESH,
+    COMMAND_DEEP_REFRESH_V2,
     COMMAND_REFRESH_LOCATION,
 ]
 

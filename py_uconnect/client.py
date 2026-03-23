@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
-from typing import Dict
+from typing import Any, Dict
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -9,7 +9,7 @@ from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
 
-def convert(v) -> None | int | float | str:
+def convert(v: Any) -> Any:
     if not isinstance(v, str):
         return v
 
@@ -27,7 +27,7 @@ def convert(v) -> None | int | float | str:
     return v
 
 
-def sg(dct: dict, *keys) -> None | int | float | dict | str:
+def sg(dct: Any, *keys: str) -> Any:
     if not isinstance(dct, dict):
         return None
 
@@ -40,7 +40,7 @@ def sg(dct: dict, *keys) -> None | int | float | dict | str:
     return convert(dct)
 
 
-def sg_eq(dct: dict, expect, *keys):
+def sg_eq(dct: Any, expect: Any, *keys: str) -> bool | None:
     v = sg(dct, *keys)
 
     if v is None:
@@ -49,7 +49,7 @@ def sg_eq(dct: dict, expect, *keys):
     return v == expect
 
 
-def sg_eq_str(dct: dict, expect: str, *keys):
+def sg_eq_str(dct: Any, expect: str, *keys: str) -> bool:
     v = sg(dct, *keys)
 
     if not isinstance(v, str):
@@ -122,9 +122,12 @@ class Vehicle:
     charging: bool | None = None
     charging_level: int | None = None
     charging_level_preference: str | None = None
-    state_of_charge: int | None = None
+    state_of_charge: float | None = None
     time_to_fully_charge_l3: int | None = None
     time_to_fully_charge_l2: int | None = None
+    time_to_fully_charge_l1: int | None = None
+    ev_head_seat: bool | None = None
+    ev_cabin_cond: bool | None = None
 
     # Wheels
     wheel_front_left_pressure: float | None = None
@@ -198,14 +201,21 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
 
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
 
+    csai = sg(ev, "chargeScheduleAdditionalInfo")
+    v.ev_head_seat = sg(csai, "headSeat")
+    v.ev_cabin_cond = sg(csai, "cabinCond")
+
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
+    v.time_to_fully_charge_l1 = sg(batt, "timeToFullyChargeL1")
 
     # Some vehicles report -1
     if v.time_to_fully_charge_l3 is not None and v.time_to_fully_charge_l3 < 0:
         v.time_to_fully_charge_l3 = None
     if v.time_to_fully_charge_l2 is not None and v.time_to_fully_charge_l2 < 0:
         v.time_to_fully_charge_l2 = None
+    if v.time_to_fully_charge_l1 is not None and v.time_to_fully_charge_l1 < 0:
+        v.time_to_fully_charge_l1 = None
 
     v.odometer = sg(vi, "odometer", "odometer", "value")
     v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
@@ -406,6 +416,11 @@ class Client:
 
         raise Exception(f"unable to obtain execution status: timed out (id {id})")
 
+    def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
+        """Get the status of a remote operation by its correlation ID"""
+
+        return self.api.get_remote_operation_status(vin, correlation_id)
+
     def command(self, vin: str, cmd: Command):
         """Execute a given command against a car with a given VIN"""
 
@@ -462,13 +477,17 @@ class Client:
         id = self.api.set_charge_schedule(vin, schedule)
         return self._poll_correlation_id(vin, id)
 
-    def set_charging_level(self, vin: str, level: ChargingLevel):
+    def set_charging_level(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Set the charging level on the vehicle with a given VIN"""
 
-        return self.api.set_charging_level(vin, level)
+        return self.api.set_charging_level(vin, level, max_soc=max_soc)
 
-    def set_charging_level_verify(self, vin: str, level: ChargingLevel):
+    def set_charging_level_verify(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Set the charging level on the vehicle with a given VIN and poll for the status"""
 
-        id = self.api.set_charging_level(vin, level)
+        id = self.api.set_charging_level(vin, level, max_soc=max_soc)
         return self._poll_correlation_id(vin, id)

@@ -235,7 +235,7 @@ class API:
             url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
-            params={"stage": "ALL"},
+            params={"stage": "ALL", "sdp": "ALL", "brand": self.brand.brand_code},
             auth=self.aws_auth,
         )
 
@@ -259,7 +259,7 @@ class API:
 
         r = self.sess.request(
             method="GET",
-            url=self.brand.api.url + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
+            url=self.brand.api.url + f"/v3/accounts/{self.uid}/vehicles/{vin}/status",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
@@ -376,7 +376,7 @@ class API:
         self._refresh_token_if_needed()
 
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url
             + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-last-trip/",
             headers=self._default_aws_headers(self.brand.api.key)
@@ -400,7 +400,7 @@ class API:
         self._refresh_token_if_needed()
 
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url
             + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-trips/",
             headers=self._default_aws_headers(self.brand.api.key)
@@ -414,7 +414,7 @@ class API:
 
         return r
 
-    def get_vehicle_image(self, vin: str) -> dict:
+    def get_vehicle_image(self, vin: str, width: int = 600, height: int = 340) -> dict:
         """Gets vehicle image URL for a vehicle with a given VIN"""
 
         if self.dev_mode:
@@ -423,12 +423,17 @@ class API:
 
         self._refresh_token_if_needed()
 
+        data = {
+            "imageURLs": [{"id": vin, "width": width, "height": height, "resp": "png"}]
+        }
+
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles/{vin}/image/",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
+            json=data,
         )
 
         r.raise_for_status()
@@ -459,6 +464,26 @@ class API:
 
         r.raise_for_status()
         _LOGGER.debug(f"get_vehicle_notifications ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
+        """Gets the status of a remote operation by its correlation ID"""
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/{correlation_id}/status/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_remote_operation_status ({vin} {correlation_id}): {r.text}")
         r = r.json()
 
         return r
@@ -505,7 +530,7 @@ class API:
         r = self.sess.request(
             method="POST",
             url=self.brand.api.url
-            + f"/v1/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
+            + f"/{cmd.api_version}/accounts/{self.uid}/vehicles/{vin}/{cmd.url}",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
@@ -557,7 +582,7 @@ class API:
         data = schedule | {"pinAuth": pin_auth}
 
         r = self.sess.request(
-            method="PUT",
+            method="POST",
             url=self.brand.api.url
             + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
             headers=self._default_aws_headers(self.brand.api.key)
@@ -576,7 +601,9 @@ class API:
 
         return r["correlationId"]
 
-    def set_charging_level(self, vin: str, level: ChargingLevel):
+    def set_charging_level(
+        self, vin: str, level: ChargingLevel, max_soc: str | None = None
+    ):
         """Sets the charging level on the vehicle with a given VIN"""
 
         if self.dev_mode:
@@ -588,6 +615,9 @@ class API:
             "preference": level.name,
             "pinAuth": pin_auth,
         }
+
+        if max_soc is not None:
+            data["maxSOC"] = max_soc
 
         r = self.sess.request(
             method="PUT",
