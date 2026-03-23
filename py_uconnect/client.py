@@ -122,7 +122,7 @@ class Vehicle:
     charging: bool | None = None
     charging_level: int | None = None
     charging_level_preference: str | None = None
-    state_of_charge: int | None = None
+    state_of_charge: float | None = None
     time_to_fully_charge_l3: int | None = None
     time_to_fully_charge_l2: int | None = None
     time_to_fully_charge_l1: int | None = None
