@@ -421,6 +421,11 @@ class Client:
         id = self.command(vin, cmd)
         return self._poll_correlation_id(vin, id)
 
+    def get_vehicle_health_report(self, vin: str) -> dict:
+        """Get vehicle health report for a vehicle with a given VIN"""
+
+        return self.api.get_vehicle_health_report(vin)
+
     def set_charging_level(self, vin: str, level: ChargingLevel):
         """Set the charging level on the vehicle with a given VIN"""
 
