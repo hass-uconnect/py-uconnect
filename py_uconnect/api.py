@@ -414,7 +414,7 @@ class API:
 
         return r
 
-    def get_vehicle_image(self, vin: str) -> dict:
+    def get_vehicle_image(self, vin: str, width: int = 600, height: int = 340) -> dict:
         """Gets vehicle image URL for a vehicle with a given VIN"""
 
         if self.dev_mode:
@@ -423,12 +423,17 @@ class API:
 
         self._refresh_token_if_needed()
 
+        data = {
+            "imageURLs": [{"id": vin, "width": width, "height": height, "resp": "png"}]
+        }
+
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles/{vin}/image/",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
+            json=data,
         )
 
         r.raise_for_status()
