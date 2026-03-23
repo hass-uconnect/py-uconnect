@@ -63,6 +63,7 @@ class Brand:
     api: API
     auth: Auth
     locale: str
+    brand_code: str
 
     def __repr__(self):
         return self.name
@@ -77,6 +78,7 @@ FIAT_EU = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="FIAT",
 )
 
 FIAT_US = Brand(
@@ -88,6 +90,7 @@ FIAT_US = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 FIAT_ASIA = Brand(
@@ -99,6 +102,7 @@ FIAT_ASIA = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="FIAT",
 )
 
 FIAT_CANADA = Brand(
@@ -110,6 +114,7 @@ FIAT_CANADA = Brand(
     api=API_US,
     auth=AUTH_US_PREP,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 ALFA_ROMEO_US_CANADA = Brand(
@@ -121,6 +126,7 @@ ALFA_ROMEO_US_CANADA = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 ALFA_ROMEO_ASIA = Brand(
@@ -132,6 +138,7 @@ ALFA_ROMEO_ASIA = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="ALFAROMEO",
 )
 
 ALFA_ROMEO_EU = Brand(
@@ -143,6 +150,7 @@ ALFA_ROMEO_EU = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="ALFAROMEO",
 )
 
 CHRYSLER_CANADA = Brand(
@@ -154,6 +162,7 @@ CHRYSLER_CANADA = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 CHRYSLER_US = Brand(
@@ -165,6 +174,7 @@ CHRYSLER_US = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 MASERATI_EU = Brand(
@@ -176,6 +186,7 @@ MASERATI_EU = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="MASERATI",
 )
 
 MASERATI_ASIA = Brand(
@@ -187,6 +198,7 @@ MASERATI_ASIA = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="MASERATI",
 )
 
 MASERATI_US_CANADA = Brand(
@@ -198,6 +210,7 @@ MASERATI_US_CANADA = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 JEEP_EU = Brand(
@@ -209,6 +222,7 @@ JEEP_EU = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="REST",
 )
 
 JEEP_US = Brand(
@@ -220,6 +234,7 @@ JEEP_US = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 JEEP_ASIA = Brand(
@@ -231,6 +246,7 @@ JEEP_ASIA = Brand(
     api=API_EU,
     auth=AUTH_EU,
     locale=LOCALE_EU,
+    brand_code="REST",
 )
 
 DODGE_US = Brand(
@@ -242,6 +258,7 @@ DODGE_US = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 RAM_US = Brand(
@@ -253,6 +270,7 @@ RAM_US = Brand(
     api=API_US,
     auth=AUTH_US,
     locale=LOCALE_US,
+    brand_code="ALL",
 )
 
 BRANDS = {

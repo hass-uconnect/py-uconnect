@@ -235,7 +235,7 @@ class API:
             url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
-            params={"stage": "ALL"},
+            params={"stage": "ALL", "sdp": "ALL", "brand": self.brand.brand_code},
             auth=self.aws_auth,
         )
 
@@ -259,7 +259,7 @@ class API:
 
         r = self.sess.request(
             method="GET",
-            url=self.brand.api.url + f"/v2/accounts/{self.uid}/vehicles/{vin}/status",
+            url=self.brand.api.url + f"/v3/accounts/{self.uid}/vehicles/{vin}/status",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
