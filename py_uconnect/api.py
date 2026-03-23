@@ -366,6 +366,54 @@ class API:
 
         return r
 
+    def get_eco_coaching_last_trip(self, vin: str) -> dict:
+        """Gets eco-coaching data for the last trip of a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_eco_coaching_last_trip_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-last-trip/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_eco_coaching_last_trip ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_eco_coaching_trips(self, vin: str) -> dict:
+        """Gets eco-coaching trip list for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_eco_coaching_trips_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-trips/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_eco_coaching_trips ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
     def get_vehicle_image(self, vin: str) -> dict:
         """Gets vehicle image URL for a vehicle with a given VIN"""
 

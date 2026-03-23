@@ -421,6 +421,16 @@ class Client:
         id = self.command(vin, cmd)
         return self._poll_correlation_id(vin, id)
 
+    def get_eco_coaching_last_trip(self, vin: str) -> dict:
+        """Get eco-coaching data for the last trip of a vehicle with a given VIN"""
+
+        return self.api.get_eco_coaching_last_trip(vin)
+
+    def get_eco_coaching_trips(self, vin: str) -> dict:
+        """Get eco-coaching trip list for a vehicle with a given VIN"""
+
+        return self.api.get_eco_coaching_trips(vin)
+
     def get_maintenance_history(self, vin: str) -> dict:
         """Get maintenance history for a vehicle with a given VIN"""
 
