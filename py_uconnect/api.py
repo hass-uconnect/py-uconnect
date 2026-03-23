@@ -376,7 +376,7 @@ class API:
         self._refresh_token_if_needed()
 
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url
             + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-last-trip/",
             headers=self._default_aws_headers(self.brand.api.key)
@@ -400,7 +400,7 @@ class API:
         self._refresh_token_if_needed()
 
         r = self.sess.request(
-            method="GET",
+            method="POST",
             url=self.brand.api.url
             + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-trips/",
             headers=self._default_aws_headers(self.brand.api.key)
@@ -476,7 +476,7 @@ class API:
         r = self.sess.request(
             method="GET",
             url=self.brand.api.url
-            + f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/{correlation_id}/status",
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/{correlation_id}/status/",
             headers=self._default_aws_headers(self.brand.api.key)
             | {"content-type": "application/json"},
             auth=self.aws_auth,
@@ -582,7 +582,7 @@ class API:
         data = schedule | {"pinAuth": pin_auth}
 
         r = self.sess.request(
-            method="PUT",
+            method="POST",
             url=self.brand.api.url
             + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
             headers=self._default_aws_headers(self.brand.api.key)
