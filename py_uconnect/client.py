@@ -416,6 +416,11 @@ class Client:
 
         raise Exception(f"unable to obtain execution status: timed out (id {id})")
 
+    def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
+        """Get the status of a remote operation by its correlation ID"""
+
+        return self.api.get_remote_operation_status(vin, correlation_id)
+
     def command(self, vin: str, cmd: Command):
         """Execute a given command against a car with a given VIN"""
 

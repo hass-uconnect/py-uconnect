@@ -463,6 +463,26 @@ class API:
 
         return r
 
+    def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
+        """Gets the status of a remote operation by its correlation ID"""
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/remote/{correlation_id}/status",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_remote_operation_status ({vin} {correlation_id}): {r.text}")
+        r = r.json()
+
+        return r
+
     def _pin_auth(self) -> str:
         data = {
             "pin": base64.b64encode(self.pin.encode()).decode(encoding="utf-8"),
