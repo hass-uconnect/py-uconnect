@@ -4,7 +4,7 @@ from typing import Dict
 from datetime import datetime, timedelta
 from time import sleep
 
-from .api import API, ChargingLevel, CHARGING_LEVELS
+from .api import API, ChargingLevel
 from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
@@ -18,10 +18,10 @@ def convert(v) -> None | int | float | str:
 
     try:
         v = int(v)
-    except:
+    except (ValueError, TypeError):
         try:
             v = float(v)
-        except:
+        except (ValueError, TypeError):
             pass
 
     return v
@@ -92,6 +92,9 @@ class Vehicle:
     year: str
     region: str
 
+    image_url: str | None = None
+    fuel_type: str | None = None
+
     # Status
     ignition_on: bool | None = None
     trunk_locked: bool | None = None
@@ -108,6 +111,7 @@ class Vehicle:
     range_total: int | None = None
     range_total_unit: str | None = None
     battery_voltage: float | None = None
+    battery_state_of_charge: str | None = None
     oil_level: int | None = None
     fuel_low: bool | None = None
     fuel_amount: int | None = None
@@ -162,6 +166,7 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     batt = sg(ev, "battery")
 
     v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
+    v.battery_state_of_charge = sg(vi, "batteryInfo", "batteryStateOfCharge")
     v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
     v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
     v.charging_level_preference = sg(ev, "chargePowerPreference")
@@ -224,8 +229,11 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
         v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
         v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
 
-    v.timestamp_info = datetime.fromtimestamp(
-        p["timestamp"] / 1000).astimezone() if "timestamp" in p else None
+    v.timestamp_info = (
+        datetime.fromtimestamp(p["timestamp"] / 1000).astimezone()
+        if "timestamp" in p
+        else None
+    )
 
     return v
 
@@ -273,7 +281,7 @@ class Client:
         for x in vehicles:
             vin = x["vin"]
 
-            if not vin in self.vehicles:
+            if vin not in self.vehicles:
                 vehicle = Vehicle(
                     vin=vin,
                     nickname=sg(x, "nickname"),
@@ -286,15 +294,20 @@ class Client:
             else:
                 vehicle = self.vehicles[vin]
 
+            vehicle.image_url = sg(x, "vehicleImageURL")
+            vehicle.fuel_type = sg(x, "fuelType")
+
             info = self.api.get_vehicle(vin)
             _update_vehicle(vehicle, info)
 
             try:
                 loc = self.api.get_vehicle_location(vin)
 
-                updated = datetime.fromtimestamp(
-                    loc["timeStamp"] / 1000
-                ).astimezone() if "timeStamp" in loc else None
+                updated = (
+                    datetime.fromtimestamp(loc["timeStamp"] / 1000).astimezone()
+                    if "timeStamp" in loc
+                    else None
+                )
 
                 vehicle.location = Location(
                     longitude=sg(loc, "longitude"),
@@ -304,7 +317,7 @@ class Client:
                     is_approximate=sg(loc, "isLocationApprox"),
                     updated=updated,
                 )
-            except:
+            except Exception:
                 pass
 
             try:
@@ -338,10 +351,12 @@ class Client:
                 vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
                 vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
 
-                vehicle.timestamp_status = datetime.fromtimestamp(
-                    s["timestamp"] / 1000
-                ).astimezone() if "timestamp" in s else None
-            except:
+                vehicle.timestamp_status = (
+                    datetime.fromtimestamp(s["timestamp"] / 1000).astimezone()
+                    if "timestamp" in s
+                    else None
+                )
+            except Exception:
                 pass
 
             enabled_services = []
@@ -364,12 +379,13 @@ class Client:
     def _get_commands_statuses(self, vin: str) -> dict:
         r = self.api.get_vehicle_notifications(vin)
 
-        if not "notifications" in r or not "items" in r["notifications"]:
+        if "notifications" not in r or "items" not in r["notifications"]:
             return {}
 
         return {
-            x["correlationId"]:
-                sg_eq_str(x, "success", "notification", "data", "status")
+            x["correlationId"]: sg_eq_str(
+                x, "success", "notification", "data", "status"
+            )
             for x in r["notifications"]["items"]
             if "correlationId" in x
         }
@@ -403,6 +419,47 @@ class Client:
         """Execute a given command against a car with a given VIN and poll for the status"""
 
         id = self.command(vin, cmd)
+        return self._poll_correlation_id(vin, id)
+
+    def get_eco_coaching_last_trip(self, vin: str) -> dict:
+        """Get eco-coaching data for the last trip of a vehicle with a given VIN"""
+
+        return self.api.get_eco_coaching_last_trip(vin)
+
+    def get_eco_coaching_trips(self, vin: str) -> dict:
+        """Get eco-coaching trip list for a vehicle with a given VIN"""
+
+        return self.api.get_eco_coaching_trips(vin)
+
+    def get_maintenance_history(self, vin: str) -> dict:
+        """Get maintenance history for a vehicle with a given VIN"""
+
+        return self.api.get_maintenance_history(vin)
+
+    def get_vehicle_health_report(self, vin: str) -> dict:
+        """Get vehicle health report for a vehicle with a given VIN"""
+
+        return self.api.get_vehicle_health_report(vin)
+
+    def get_vehicle_image(self, vin: str) -> dict:
+        """Get vehicle image URL for a vehicle with a given VIN"""
+
+        return self.api.get_vehicle_image(vin)
+
+    def get_charge_schedules(self, vin: str) -> dict:
+        """Get EV charge schedules for a vehicle with a given VIN"""
+
+        return self.api.get_charge_schedules(vin)
+
+    def set_charge_schedule(self, vin: str, schedule: dict):
+        """Set an EV charge schedule on the vehicle with a given VIN"""
+
+        return self.api.set_charge_schedule(vin, schedule)
+
+    def set_charge_schedule_verify(self, vin: str, schedule: dict) -> bool:
+        """Set an EV charge schedule and poll for the status"""
+
+        id = self.api.set_charge_schedule(vin, schedule)
         return self._poll_correlation_id(vin, id)
 
     def set_charging_level(self, vin: str, level: ChargingLevel):

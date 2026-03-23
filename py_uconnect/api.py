@@ -6,7 +6,7 @@ import base64
 import logging
 import http.client as http_client
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from datetime import datetime, timedelta
@@ -58,13 +58,13 @@ class API:
         self.brand = brand
         self.dev_mode = dev_mode
 
-        self.uid: str = None
-        self.aws_auth: AWSSigV4 = None
+        self.uid: str | None = None
+        self.aws_auth: AWSSigV4 | None = None
 
         self.sess = requests.Session()
         self.cognito_client = None
 
-        self.expire_time: datetime = None
+        self.expire_time: datetime | None = None
 
         if disable_tls_verification:
             self.sess.verify = False
@@ -75,7 +75,7 @@ class API:
         if trace:
             http_client.HTTPConnection.debuglevel = 1
             logging.basicConfig()
-            logging.getLogger().setLevel(logging.TRACE)
+            logging.getLogger().setLevel(logging.DEBUG)
             requests_log = logging.getLogger("requests.packages.urllib3")
             requests_log.setLevel(logging.DEBUG)
             requests_log.propagate = True
@@ -243,7 +243,7 @@ class API:
         _LOGGER.debug(f"list_vehicles: {r.text}")
         r = r.json()
 
-        if not "vehicles" in r:
+        if "vehicles" not in r:
             raise Exception(f"incorrect response: {r}")
 
         return r["vehicles"]
@@ -319,6 +319,124 @@ class API:
 
         return r
 
+    def get_vehicle_health_report(self, vin: str) -> dict:
+        """Gets vehicle health report for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_vehicle_vhr_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url + f"/v1/accounts/{self.uid}/vehicles/{vin}/vhr/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_vehicle_health_report ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_maintenance_history(self, vin: str) -> dict:
+        """Gets maintenance history for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_maintenance_history_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/maintenance/history/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_maintenance_history ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_eco_coaching_last_trip(self, vin: str) -> dict:
+        """Gets eco-coaching data for the last trip of a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_eco_coaching_last_trip_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-last-trip/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_eco_coaching_last_trip ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_eco_coaching_trips(self, vin: str) -> dict:
+        """Gets eco-coaching trip list for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_eco_coaching_trips_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ecocoaching/get-trips/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_eco_coaching_trips ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_vehicle_image(self, vin: str) -> dict:
+        """Gets vehicle image URL for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_vehicle_image_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url + f"/v4/accounts/{self.uid}/vehicles/{vin}/image/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_vehicle_image ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
     def get_vehicle_notifications(self, vin: str, limit: int | None = 30) -> dict:
         """Loads notifications for a vehicle with a given VIN"""
 
@@ -366,7 +484,7 @@ class API:
         _LOGGER.debug(f"pin auth: {r.text}")
         r = r.json()
 
-        if not "token" in r:
+        if "token" not in r:
             raise Exception(f"authentication failed: no token found: {r}")
 
         return r["token"]
@@ -398,9 +516,63 @@ class API:
         _LOGGER.debug(f"command execute ({vin} {cmd}): {r.text}")
         r = r.json()
 
-        if not "responseStatus" in r or r["responseStatus"] != "pending":
+        if "responseStatus" not in r or r["responseStatus"] != "pending":
             error = r.get("debugMsg", "unknown error")
             raise Exception(f"command queuing failed: {error} ({r})")
+
+        return r["correlationId"]
+
+    def get_charge_schedules(self, vin: str) -> dict:
+        """Gets EV charge schedules for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_charge_schedules_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_charge_schedules ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def set_charge_schedule(self, vin: str, schedule: dict):
+        """Sets an EV charge schedule on the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
+
+        pin_auth = self._pin_auth()
+
+        data = schedule | {"pinAuth": pin_auth}
+
+        r = self.sess.request(
+            method="PUT",
+            url=self.brand.api.url
+            + f"/v4/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"set_charge_schedule ({vin}): {r.text}")
+        r = r.json()
+
+        if "correlationId" not in r:
+            error = r.get("debugMsg", "unknown error")
+            raise Exception(f"set charge schedule failed: {error} ({r})")
 
         return r["correlationId"]
 
@@ -431,7 +603,7 @@ class API:
         _LOGGER.debug(f"set charging level ({vin} {level.name}): {r.text}")
         r = r.json()
 
-        if not "correlationId" in r:
+        if "correlationId" not in r:
             error = r.get("debugMsg", "unknown error")
             raise Exception(f"set charging level failed: {error} ({r})")
 

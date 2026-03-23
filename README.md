@@ -29,6 +29,8 @@ This would emit something similar to:
   "model": "Neuer 500",
   "year": 2023,
   "region": "EMEA",
+  "image_url": "https://example.com/vehicle/image.png",
+  "fuel_type": "E",
   "ignition_on": false,
   "trunk_locked": true,
   "odometer": 1841,
@@ -39,6 +41,7 @@ This would emit something similar to:
   "distance_to_empty": 134,
   "distance_to_empty_unit": "km",
   "battery_voltage": 14.875,
+  "battery_state_of_charge": "normal",
   "oil_level": null,
   "fuel_low": false,
   "fuel_amount": null,
@@ -88,4 +91,25 @@ This would emit something similar to:
     "ROPRECOND_OFF"
   ]
 }
+```
+
+## Additional API methods
+
+```python
+# Vehicle health report
+report = client.get_vehicle_health_report(vin)
+
+# Maintenance history
+history = client.get_maintenance_history(vin)
+
+# Eco-coaching trip data
+last_trip = client.get_eco_coaching_last_trip(vin)
+trips = client.get_eco_coaching_trips(vin)
+
+# Vehicle image (dedicated endpoint)
+image = client.get_vehicle_image(vin)
+
+# EV charge schedules
+schedules = client.get_charge_schedules(vin)
+client.set_charge_schedule(vin, schedule)
 ```
