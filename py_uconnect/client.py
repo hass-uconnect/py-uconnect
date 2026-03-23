@@ -126,6 +126,8 @@ class Vehicle:
     time_to_fully_charge_l3: int | None = None
     time_to_fully_charge_l2: int | None = None
     time_to_fully_charge_l1: int | None = None
+    ev_head_seat: bool | None = None
+    ev_cabin_cond: bool | None = None
 
     # Wheels
     wheel_front_left_pressure: float | None = None
@@ -198,6 +200,10 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.oil_level = sg(vi, "oilLevel", "oilLevel")
 
     v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
+
+    csai = sg(ev, "chargeScheduleAdditionalInfo")
+    v.ev_head_seat = sg(csai, "headSeat")
+    v.ev_cabin_cond = sg(csai, "cabinCond")
 
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
