@@ -342,6 +342,30 @@ class API:
 
         return r
 
+    def get_maintenance_history(self, vin: str) -> dict:
+        """Gets maintenance history for a vehicle with a given VIN"""
+
+        if self.dev_mode:
+            with open(f"test_maintenance_history_{vin}.json") as f:
+                return json.load(f)
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/maintenance/history/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_maintenance_history ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
     def get_vehicle_image(self, vin: str) -> dict:
         """Gets vehicle image URL for a vehicle with a given VIN"""
 
