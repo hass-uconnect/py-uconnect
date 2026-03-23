@@ -93,6 +93,7 @@ class Vehicle:
     region: str
 
     image_url: str | None = None
+    fuel_type: str | None = None
 
     # Status
     ignition_on: bool | None = None
@@ -110,6 +111,7 @@ class Vehicle:
     range_total: int | None = None
     range_total_unit: str | None = None
     battery_voltage: float | None = None
+    battery_state_of_charge: str | None = None
     oil_level: int | None = None
     fuel_low: bool | None = None
     fuel_amount: int | None = None
@@ -164,6 +166,7 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     batt = sg(ev, "battery")
 
     v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
+    v.battery_state_of_charge = sg(vi, "batteryInfo", "batteryStateOfCharge")
     v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
     v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
     v.charging_level_preference = sg(ev, "chargePowerPreference")
@@ -292,6 +295,7 @@ class Client:
                 vehicle = self.vehicles[vin]
 
             vehicle.image_url = sg(x, "vehicleImageURL")
+            vehicle.fuel_type = sg(x, "fuelType")
 
             info = self.api.get_vehicle(vin)
             _update_vehicle(vehicle, info)
