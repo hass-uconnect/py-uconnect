@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
-from typing import Dict
+from typing import Any, Dict
 from datetime import datetime, timedelta
 from time import sleep
 
@@ -9,7 +9,7 @@ from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
 
 
-def convert(v) -> None | int | float | str:
+def convert(v: Any) -> Any:
     if not isinstance(v, str):
         return v
 
@@ -27,7 +27,7 @@ def convert(v) -> None | int | float | str:
     return v
 
 
-def sg(dct: dict, *keys) -> None | int | float | dict | str:
+def sg(dct: Any, *keys: str) -> Any:
     if not isinstance(dct, dict):
         return None
 
@@ -40,7 +40,7 @@ def sg(dct: dict, *keys) -> None | int | float | dict | str:
     return convert(dct)
 
 
-def sg_eq(dct: dict, expect, *keys):
+def sg_eq(dct: Any, expect: Any, *keys: str) -> bool | None:
     v = sg(dct, *keys)
 
     if v is None:
@@ -49,7 +49,7 @@ def sg_eq(dct: dict, expect, *keys):
     return v == expect
 
 
-def sg_eq_str(dct: dict, expect: str, *keys):
+def sg_eq_str(dct: Any, expect: str, *keys: str) -> bool:
     v = sg(dct, *keys)
 
     if not isinstance(v, str):
