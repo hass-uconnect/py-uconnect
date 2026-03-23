@@ -29,6 +29,7 @@ This would emit something similar to:
   "model": "Neuer 500",
   "year": 2023,
   "region": "EMEA",
+  "image_url": "https://example.com/vehicle/image.png",
   "ignition_on": false,
   "trunk_locked": true,
   "odometer": 1841,

@@ -92,6 +92,8 @@ class Vehicle:
     year: str
     region: str
 
+    image_url: str | None = None
+
     # Status
     ignition_on: bool | None = None
     trunk_locked: bool | None = None
@@ -288,6 +290,8 @@ class Client:
                 self.vehicles[vin] = vehicle
             else:
                 vehicle = self.vehicles[vin]
+
+            vehicle.image_url = sg(x, "vehicleImageURL")
 
             info = self.api.get_vehicle(vin)
             _update_vehicle(vehicle, info)
