@@ -441,6 +441,11 @@ class Client:
 
         return self.api.get_vehicle_health_report(vin)
 
+    def get_vehicle_image(self, vin: str) -> dict:
+        """Get vehicle image URL for a vehicle with a given VIN"""
+
+        return self.api.get_vehicle_image(vin)
+
     def get_charge_schedules(self, vin: str) -> dict:
         """Get EV charge schedules for a vehicle with a given VIN"""
 
