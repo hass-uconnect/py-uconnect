@@ -125,6 +125,7 @@ class Vehicle:
     state_of_charge: int | None = None
     time_to_fully_charge_l3: int | None = None
     time_to_fully_charge_l2: int | None = None
+    time_to_fully_charge_l1: int | None = None
 
     # Wheels
     wheel_front_left_pressure: float | None = None
@@ -200,12 +201,15 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
 
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
+    v.time_to_fully_charge_l1 = sg(batt, "timeToFullyChargeL1")
 
     # Some vehicles report -1
     if v.time_to_fully_charge_l3 is not None and v.time_to_fully_charge_l3 < 0:
         v.time_to_fully_charge_l3 = None
     if v.time_to_fully_charge_l2 is not None and v.time_to_fully_charge_l2 < 0:
         v.time_to_fully_charge_l2 = None
+    if v.time_to_fully_charge_l1 is not None and v.time_to_fully_charge_l1 < 0:
+        v.time_to_fully_charge_l1 = None
 
     v.odometer = sg(vi, "odometer", "odometer", "value")
     v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
