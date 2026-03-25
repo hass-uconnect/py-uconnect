@@ -156,3 +156,23 @@ NAFTA vehicles report a `sdp` field indicating the connected services provider:
 
 The `enabled_services` field lists all active services on the vehicle, including
 non-command services like `SVLA` (Stolen Vehicle Locator), `BCALL`, `ECALL`, etc.
+
+## SiriusXM Guardian vehicles
+
+Some US-market vehicles use SiriusXM Guardian as their connected services provider
+instead of the standard Uconnect cellular service. These vehicles may not appear in
+the API if the account has not been properly linked.
+
+Analysis of the official Stellantis mobile apps shows that SiriusXM Guardian vehicles
+use the **same cloud API** (`channels.sdpr-02.fcagcv.com`) as standard Uconnect
+vehicles once the account is linked. The Mopar/SXM Guardian identity is an
+authentication layer, not a separate vehicle API. The `sdp` field in the vehicle
+response simply controls UI presentation (subscription messages, branding).
+
+If your SiriusXM Guardian vehicle does not appear:
+
+1. Install the official app for your brand (My Uconnect, Jeep, etc.)
+2. Log in and ensure your vehicle is visible and functional in the official app
+3. If the app prompts you to link your Mopar account, complete the linking process
+4. Once the vehicle works in the official app, it should appear in this API using
+   the same credentials
