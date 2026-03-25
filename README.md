@@ -29,6 +29,7 @@ This would emit something similar to:
   "model": "Neuer 500",
   "year": 2023,
   "region": "EMEA",
+  "sdp": null,
   "image_url": "https://example.com/vehicle/image.png",
   "fuel_type": "E",
   "ignition_on": false,
@@ -92,6 +93,20 @@ This would emit something similar to:
     "ROPRECOND",
     "ROTRUNKUNLOCK",
     "ROPRECOND_OFF"
+  ],
+  "enabled_services": [
+    "RDL",
+    "RDU",
+    "VF",
+    "ROLIGHTS",
+    "CNOW",
+    "DEEPREFRESH",
+    "ROPRECOND",
+    "ROTRUNKUNLOCK",
+    "ROPRECOND_OFF",
+    "SVLA",
+    "BCALL",
+    "ECALL"
   ]
 }
 ```
@@ -118,4 +133,26 @@ client.set_charge_schedule(vin, schedule)
 
 # Remote operation status (check if a command succeeded)
 status = client.get_remote_operation_status(vin, correlation_id)
+
+# Stolen vehicle locator status (SiriusXM Guardian / SVLA)
+svla = client.get_stolen_vehicle_status(vin)
+
+# Vehicle subscription status
+subscription = client.get_vehicle_subscription(vin)
+
+# Set vehicle nickname
+client.set_vehicle_nickname(vin, "My Car")
+
+# Trigger a fresh location update (returns correlation ID)
+correlation_id = client.update_location(vin)
 ```
+
+## Service Delivery Platform (SDP)
+
+NAFTA vehicles report a `sdp` field indicating the connected services provider:
+- `"SXM"` - SiriusXM Guardian
+- `"SPRINT"` - Uconnect Access (Sprint/T-Mobile)
+- `null` - EMEA/LATAM/IAP regions (no SDP distinction)
+
+The `enabled_services` field lists all active services on the vehicle, including
+non-command services like `SVLA` (Stolen Vehicle Locator), `BCALL`, `ECALL`, etc.
