@@ -28,6 +28,7 @@ COMMAND_TRUNK_LOCK = Command(name="ROTRUNKLOCK", api_version="v2")
 COMMAND_LIFTGATE_UNLOCK = Command(name="ROLIFTGATEUNLOCK", api_version="v2")
 COMMAND_LIFTGATE_LOCK = Command(name="ROLIFTGATELOCK", api_version="v2")
 COMMAND_CABIN_VENTILATION = Command(name="ACV", api_version="v2")
+COMMAND_HVAC_TARGET_TEMP = Command(name="ROHVACTMP", api_version="v2")
 COMMAND_CHARGE = Command(name="CNOW", url="ev/chargenow")
 COMMAND_CHARGE_V4 = Command(name="CNOW2", url="ev/chargenow", api_version="v4")
 COMMAND_DEEP_REFRESH = Command(name="DEEPREFRESH", url="ev")
@@ -52,6 +53,7 @@ COMMANDS = [
     COMMAND_LIFTGATE_UNLOCK,
     COMMAND_LIFTGATE_LOCK,
     COMMAND_CABIN_VENTILATION,
+    COMMAND_HVAC_TARGET_TEMP,
     COMMAND_CHARGE,
     COMMAND_CHARGE_V4,
     COMMAND_DEEP_REFRESH,

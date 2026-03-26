@@ -92,6 +92,7 @@ class Vehicle:
     year: str
     region: str
 
+    sdp: str | None = None
     image_url: str | None = None
     fuel_type: str | None = None
 
@@ -155,6 +156,7 @@ class Vehicle:
 
     location: Location | None = None
     supported_commands: list[str] = field(default_factory=list)
+    enabled_services: list[str] = field(default_factory=list)
 
     timestamp_info: datetime | None = None
     timestamp_status: datetime | None = None
@@ -304,6 +306,7 @@ class Client:
             else:
                 vehicle = self.vehicles[vin]
 
+            vehicle.sdp = sg(x, "sdp")
             vehicle.image_url = sg(x, "vehicleImageURL")
             vehicle.fuel_type = sg(x, "fuelType")
 
@@ -377,6 +380,7 @@ class Client:
                     if sg(v, "vehicleCapable") and sg(v, "serviceEnabled")
                 ]
 
+            vehicle.enabled_services = enabled_services
             vehicle.supported_commands = [
                 v for v in enabled_services if v in COMMANDS_BY_NAME
             ]
@@ -435,6 +439,29 @@ class Client:
 
         id = self.command(vin, cmd)
         return self._poll_correlation_id(vin, id)
+
+    def get_stolen_vehicle_status(self, vin: str) -> dict:
+        """Get stolen vehicle locator (SVLA) status for a vehicle with a given VIN"""
+
+        return self.api.get_stolen_vehicle_status(vin)
+
+    def get_vehicle_subscription(self, vin: str) -> dict:
+        """Get subscription status for a vehicle with a given VIN"""
+
+        return self.api.get_vehicle_subscription(vin)
+
+    def set_vehicle_nickname(self, vin: str, nickname: str) -> dict:
+        """Set a nickname for a vehicle with a given VIN"""
+
+        return self.api.set_vehicle_nickname(vin, nickname)
+
+    def update_location(self, vin: str) -> str:
+        """Trigger a fresh location update for a vehicle with a given VIN.
+
+        Returns the correlation ID to poll for completion.
+        """
+
+        return self.api.update_location(vin)
 
     def get_eco_coaching_last_trip(self, vin: str) -> dict:
         """Get eco-coaching data for the last trip of a vehicle with a given VIN"""

@@ -29,6 +29,7 @@ This would emit something similar to:
   "model": "Neuer 500",
   "year": 2023,
   "region": "EMEA",
+  "sdp": null,
   "image_url": "https://example.com/vehicle/image.png",
   "fuel_type": "E",
   "ignition_on": false,
@@ -92,6 +93,20 @@ This would emit something similar to:
     "ROPRECOND",
     "ROTRUNKUNLOCK",
     "ROPRECOND_OFF"
+  ],
+  "enabled_services": [
+    "RDL",
+    "RDU",
+    "VF",
+    "ROLIGHTS",
+    "CNOW",
+    "DEEPREFRESH",
+    "ROPRECOND",
+    "ROTRUNKUNLOCK",
+    "ROPRECOND_OFF",
+    "SVLA",
+    "BCALL",
+    "ECALL"
   ]
 }
 ```
@@ -118,4 +133,57 @@ client.set_charge_schedule(vin, schedule)
 
 # Remote operation status (check if a command succeeded)
 status = client.get_remote_operation_status(vin, correlation_id)
+
+# Stolen vehicle locator status (SiriusXM Guardian / SVLA)
+svla = client.get_stolen_vehicle_status(vin)
+
+# Vehicle subscription status
+subscription = client.get_vehicle_subscription(vin)
+
+# Set vehicle nickname
+client.set_vehicle_nickname(vin, "My Car")
+
+# Trigger a fresh location update (returns correlation ID)
+correlation_id = client.update_location(vin)
 ```
+
+## Service Delivery Platform (SDP)
+
+NAFTA vehicles report a `sdp` field indicating the connected services provider:
+- `"SXM"` - SiriusXM Guardian
+- `"SPRINT"` - Uconnect Access (Sprint/T-Mobile)
+- `null` - EMEA/LATAM/IAP regions (no SDP distinction)
+
+The `enabled_services` field lists all active services on the vehicle, including
+non-command services like `SVLA` (Stolen Vehicle Locator), `BCALL`, `ECALL`, etc.
+
+## SiriusXM Guardian vehicles
+
+Some US-market vehicles use SiriusXM Guardian as their connected services provider
+instead of the standard Uconnect cellular service. These vehicles may not appear in
+the API if the account has not been properly linked.
+
+Analysis of the official Stellantis mobile apps (Ram NAFTA, Chrysler NAFTA, Wagoneer
+NAFTA) shows that:
+
+- There are **no separate API endpoints** for SXM Guardian vehicles. All vehicles use
+  `channels.sdpr-02.fcagcv.com` regardless of SDP type.
+- The `sdp` field only affects UI presentation (subscription messages, branding).
+- The apps contain a **legacy Mopar login fallback**: when Gigya login fails for a
+  Mopar-only account, the app POSTs to `api.extra.fcagroup.com` which triggers a
+  server-side account migration to Gigya, then retries the standard login.
+
+This suggests SXM Guardian vehicles should work once the account is migrated to Gigya.
+However, we cannot fully verify this without a real SXM Guardian account because some
+configuration values in the APK are encrypted.
+
+If your SiriusXM Guardian vehicle does not appear:
+
+1. Install the official app for your brand (Jeep, Ram, Chrysler, Dodge, etc.)
+2. Log in with your Mopar/SXM Guardian credentials
+3. If the app prompts you to link or migrate your account, complete the process
+4. Verify your vehicle is visible and functional in the official app
+5. Use the same credentials with this library
+
+If your vehicle still does not appear after completing these steps, please open an
+issue with your vehicle year, make, model, and whether it shows in the official app.

@@ -468,6 +468,101 @@ class API:
 
         return r
 
+    def get_stolen_vehicle_status(self, vin: str) -> dict:
+        """Gets stolen vehicle locator (SVLA) status for a vehicle with a given VIN"""
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/svla/status/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_stolen_vehicle_status ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def get_vehicle_subscription(self, vin: str) -> dict:
+        """Gets subscription status for a vehicle with a given VIN"""
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="GET",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/subscription/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"get_vehicle_subscription ({vin}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def set_vehicle_nickname(self, vin: str, nickname: str) -> dict:
+        """Sets a nickname for a vehicle with a given VIN"""
+
+        self._refresh_token_if_needed()
+
+        r = self.sess.request(
+            method="POST",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/nickname/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json={"nickname": nickname},
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"set_vehicle_nickname ({vin} {nickname}): {r.text}")
+        r = r.json()
+
+        return r
+
+    def update_location(self, vin: str) -> str:
+        """Triggers a fresh location update for a vehicle with a given VIN.
+
+        Returns the correlation ID to poll for completion.
+        Use get_vehicle_location() afterwards to retrieve the updated location.
+        """
+
+        pin_auth = self._pin_auth()
+
+        data = {
+            "command": "VF",
+            "pinAuth": pin_auth,
+        }
+
+        r = self.sess.request(
+            method="POST",
+            url=self.brand.api.url
+            + f"/v1/accounts/{self.uid}/vehicles/{vin}/location/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"update_location ({vin}): {r.text}")
+        r = r.json()
+
+        if "responseStatus" not in r or r["responseStatus"] != "pending":
+            error = r.get("debugMsg", "unknown error")
+            raise Exception(f"update location failed: {error} ({r})")
+
+        return r["correlationId"]
+
     def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
         """Gets the status of a remote operation by its correlation ID"""
 
