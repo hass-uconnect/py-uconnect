@@ -163,16 +163,27 @@ Some US-market vehicles use SiriusXM Guardian as their connected services provid
 instead of the standard Uconnect cellular service. These vehicles may not appear in
 the API if the account has not been properly linked.
 
-Analysis of the official Stellantis mobile apps shows that SiriusXM Guardian vehicles
-use the **same cloud API** (`channels.sdpr-02.fcagcv.com`) as standard Uconnect
-vehicles once the account is linked. The Mopar/SXM Guardian identity is an
-authentication layer, not a separate vehicle API. The `sdp` field in the vehicle
-response simply controls UI presentation (subscription messages, branding).
+Analysis of the official Stellantis mobile apps (Ram NAFTA, Chrysler NAFTA, Wagoneer
+NAFTA) shows that:
+
+- There are **no separate API endpoints** for SXM Guardian vehicles. All vehicles use
+  `channels.sdpr-02.fcagcv.com` regardless of SDP type.
+- The `sdp` field only affects UI presentation (subscription messages, branding).
+- The apps contain a **legacy Mopar login fallback**: when Gigya login fails for a
+  Mopar-only account, the app POSTs to `api.extra.fcagroup.com` which triggers a
+  server-side account migration to Gigya, then retries the standard login.
+
+This suggests SXM Guardian vehicles should work once the account is migrated to Gigya.
+However, we cannot fully verify this without a real SXM Guardian account because some
+configuration values in the APK are encrypted.
 
 If your SiriusXM Guardian vehicle does not appear:
 
-1. Install the official app for your brand (My Uconnect, Jeep, etc.)
-2. Log in and ensure your vehicle is visible and functional in the official app
-3. If the app prompts you to link your Mopar account, complete the linking process
-4. Once the vehicle works in the official app, it should appear in this API using
-   the same credentials
+1. Install the official app for your brand (Jeep, Ram, Chrysler, Dodge, etc.)
+2. Log in with your Mopar/SXM Guardian credentials
+3. If the app prompts you to link or migrate your account, complete the process
+4. Verify your vehicle is visible and functional in the official app
+5. Use the same credentials with this library
+
+If your vehicle still does not appear after completing these steps, please open an
+issue with your vehicle year, make, model, and whether it shows in the official app.
