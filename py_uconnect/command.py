@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -6,6 +8,7 @@ class Command:
     name: str
     url: str = "remote"
     api_version: str = "v1"
+    fallback: Command | None = None
 
     def __repr__(self):
         return self.name
@@ -29,10 +32,25 @@ COMMAND_LIFTGATE_UNLOCK = Command(name="ROLIFTGATEUNLOCK", api_version="v2")
 COMMAND_LIFTGATE_LOCK = Command(name="ROLIFTGATELOCK", api_version="v2")
 COMMAND_CABIN_VENTILATION = Command(name="ACV", api_version="v2")
 COMMAND_HVAC_TARGET_TEMP = Command(name="ROHVACTMP", api_version="v2")
-COMMAND_CHARGE = Command(name="CNOW", url="ev/chargenow")
-COMMAND_CHARGE_V4 = Command(name="CNOW2", url="ev/chargenow", api_version="v4")
-COMMAND_DEEP_REFRESH = Command(name="DEEPREFRESH", url="ev")
+
 COMMAND_DEEP_REFRESH_V2 = Command(name="DEEPREFRESH2", url="ev", api_version="v2")
+COMMAND_DEEP_REFRESH = Command(
+    name="DEEPREFRESH",
+    url="ev",
+    fallback=COMMAND_DEEP_REFRESH_V2,
+)
+
+COMMAND_CHARGE_V4 = Command(
+    name="START_CHARGE",
+    url="ev/chargenow",
+    api_version="v4",
+)
+COMMAND_CHARGE = Command(
+    name="CNOW",
+    url="ev/chargenow",
+    fallback=COMMAND_CHARGE_V4,
+)
+
 COMMAND_REFRESH_LOCATION = Command(name="VF", url="location")
 
 COMMANDS = [
