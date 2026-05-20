@@ -4,6 +4,8 @@ from typing import Any, Dict
 from datetime import datetime, timedelta
 from time import sleep
 
+from requests.exceptions import HTTPError
+
 from .api import API, ChargingLevel
 from .brands import Brand
 from .command import Command, COMMANDS_BY_NAME
@@ -310,8 +312,21 @@ class Client:
             vehicle.image_url = sg(x, "vehicleImageURL")
             vehicle.fuel_type = sg(x, "fuelType")
 
-            info = self.api.get_vehicle(vin)
-            _update_vehicle(vehicle, info)
+            try:
+                info = self.api.get_vehicle(vin)
+                _update_vehicle(vehicle, info)
+            except HTTPError as err:
+                status_code = (
+                    err.response.status_code
+                    if err.response is not None
+                    else None
+                )
+                if status_code in (400, 404):
+                    if vin in self.vehicles:
+                        del self.vehicles[vin]
+
+                    continue
+                raise
 
             try:
                 loc = self.api.get_vehicle_location(vin)
