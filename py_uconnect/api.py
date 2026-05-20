@@ -249,7 +249,13 @@ class API:
         return r["vehicles"]
 
     def get_vehicle(self, vin: str) -> dict:
-        """Gets a more detailed info abount a vehicle with a given VIN"""
+        """Gets detailed info about a vehicle with a given VIN.
+
+        Some older vehicles can be returned by the account vehicle list but fail
+        the newer v3 status endpoint with 502. Try v4 next, then allow the
+        vehicle to load with partial data so remote/status and location can
+        still populate what is available.
+        """
 
         if self.dev_mode:
             with open(f"test_vehicle_{vin}.json") as f:
@@ -257,19 +263,45 @@ class API:
 
         self._refresh_token_if_needed()
 
-        r = self.sess.request(
-            method="GET",
-            url=self.brand.api.url + f"/v3/accounts/{self.uid}/vehicles/{vin}/status",
-            headers=self._default_aws_headers(self.brand.api.key)
-            | {"content-type": "application/json"},
-            auth=self.aws_auth,
+        last_error = None
+
+        for api_version in ("v3", "v4"):
+            try:
+                r = self.sess.request(
+                    method="GET",
+                    url=self.brand.api.url
+                    + f"/{api_version}/accounts/{self.uid}/vehicles/{vin}/status",
+                    headers=self._default_aws_headers(self.brand.api.key)
+                    | {"content-type": "application/json"},
+                    auth=self.aws_auth,
+                )
+
+                r.raise_for_status()
+                _LOGGER.debug(f"get_vehicle ({vin}, {api_version}): {r.text}")
+                return r.json()
+
+            except requests.exceptions.HTTPError as err:
+                last_error = err
+
+                status_code = err.response.status_code if err.response is not None else None
+
+                if status_code not in (400, 404, 502):
+                    raise
+
+                _LOGGER.warning(
+                    "Vehicle %s status endpoint %s failed with HTTP %s; trying fallback",
+                    vin,
+                    api_version,
+                    status_code,
+                )
+
+        _LOGGER.warning(
+            "Vehicle %s does not support v3/v4 detailed status; loading partial vehicle data: %s",
+            vin,
+            last_error,
         )
 
-        r.raise_for_status()
-        _LOGGER.debug(f"get_vehicle ({vin}): {r.text}")
-        r = r.json()
-
-        return r
+        return {}
 
     def get_vehicle_status(self, vin: str) -> dict:
         """Loads another part of status of a vehicle with a given VIN"""
