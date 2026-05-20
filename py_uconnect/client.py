@@ -310,8 +310,17 @@ class Client:
             vehicle.image_url = sg(x, "vehicleImageURL")
             vehicle.fuel_type = sg(x, "fuelType")
 
-            info = self.api.get_vehicle(vin)
-            _update_vehicle(vehicle, info)
+            try:
+                info = self.api.get_vehicle(vin)
+                _update_vehicle(vehicle, info)
+            except Exception as err:
+                # Some older or stale vehicles can be returned by list_vehicles()
+                # but fail on the detailed SDP status endpoint. Do not let one
+                # incompatible VIN break the whole account refresh.
+                if vin in self.vehicles:
+                    del self.vehicles[vin]
+
+                continue
 
             try:
                 loc = self.api.get_vehicle_location(vin)
