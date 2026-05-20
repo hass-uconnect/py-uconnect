@@ -431,7 +431,7 @@ class Client:
                     if result in ("failure", "failed", "error", "rejected"):
                         return False
 
-            except Exception as err:
+            except (ConnectionError, TimeoutError, ValueError) as err:
                 last_error = err
 
             r = self._get_commands_statuses(vin)
