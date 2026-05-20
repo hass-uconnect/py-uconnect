@@ -313,7 +313,7 @@ class Client:
             try:
                 info = self.api.get_vehicle(vin)
                 _update_vehicle(vehicle, info)
-            except Exception as err:
+            except Exception:
                 # Some older or stale vehicles can be returned by list_vehicles()
                 # but fail on the detailed SDP status endpoint. Do not let one
                 # incompatible VIN break the whole account refresh.
