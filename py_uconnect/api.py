@@ -609,14 +609,7 @@ class API:
 
         return r["token"]
 
-    def command(self, vin: str, cmd: Command):
-        """Sends given command to the vehicle with a given VIN"""
-
-        if self.dev_mode:
-            return
-
-        pin_auth = self._pin_auth()
-
+    def _command_with_pin_auth(self, vin: str, cmd: Command, pin_auth: str):
         data = {
             "command": cmd.name,
             "pinAuth": pin_auth,
@@ -641,6 +634,33 @@ class API:
             raise Exception(f"command queuing failed: {error} ({r})")
 
         return r["correlationId"]
+
+    def command(self, vin: str, cmd: Command):
+        """Sends given command to the vehicle with a given VIN"""
+
+        if self.dev_mode:
+            return
+
+        pin_auth = self._pin_auth()
+
+        try:
+            return self._command_with_pin_auth(vin, cmd, pin_auth)
+        except requests.exceptions.HTTPError as err:
+            fallback = getattr(cmd, "fallback", None)
+
+            if (
+                err.response is not None
+                and err.response.status_code == 403
+                and fallback is not None
+            ):
+                _LOGGER.warning(
+                    "%s command returned 403; retrying with %s",
+                    cmd,
+                    fallback,
+                )
+                return self._command_with_pin_auth(vin, fallback, pin_auth)
+
+            raise
 
     def get_charge_schedules(self, vin: str) -> dict:
         """Gets EV charge schedules for a vehicle with a given VIN"""

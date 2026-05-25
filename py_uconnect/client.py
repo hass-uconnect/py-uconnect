@@ -427,13 +427,36 @@ class Client:
         interval: timedelta = timedelta(seconds=2),
     ) -> bool:
         start = datetime.now()
+        last_error: Exception | None = None
+
         while datetime.now() - start < timeout:
             sleep(interval.seconds)
+
+            try:
+                status = self.get_remote_operation_status(vin, id)
+
+                result = sg(status, "status") or sg(status, "responseStatus")
+
+                if isinstance(result, str):
+                    result = result.lower()
+
+                    if result in ("success", "succeeded", "completed", "complete"):
+                        return True
+
+                    if result in ("failure", "failed", "error", "rejected"):
+                        return False
+
+            except (ConnectionError, TimeoutError, ValueError) as err:
+                last_error = err
+
             r = self._get_commands_statuses(vin)
             if id in r:
                 return r[id]
 
-        raise Exception(f"unable to obtain execution status: timed out (id {id})")
+        raise Exception(
+            f"unable to obtain execution status: timed out "
+            f"(id {id}; last_error={last_error})"
+        )
 
     def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
         """Get the status of a remote operation by its correlation ID"""
