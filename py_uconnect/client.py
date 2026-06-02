@@ -446,7 +446,12 @@ class Client:
                     if result in ("failure", "failed", "error", "rejected"):
                         return False
 
-            except (ConnectionError, TimeoutError, ValueError) as err:
+            except (ConnectionError, TimeoutError, ValueError, HTTPError) as err:
+                # Some brands/regions return 404 for the remote-operation status
+                # endpoint even though the command itself succeeds (see issue #105).
+                # Don't abort the poll on the HTTP error: fall through to the
+                # notifications-based fallback below, which reports the status via
+                # a working endpoint.
                 last_error = err
 
             r = self._get_commands_statuses(vin)
