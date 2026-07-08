@@ -756,6 +756,47 @@ class API:
 
         return r["correlationId"]
 
+    def set_charge_schedule_emea(self, vin: str, schedules: list[dict]):
+        """Sets EV charge schedules on EMEA vehicles.
+
+        Unlike ``set_charge_schedule`` (which POSTs to ``/v4/.../ev/schedule/``
+        and fails with HTTP 500 on EMEA cars such as the Fiat New 500e), this
+        posts the full slot list to ``/v2/.../ev/schedule/`` wrapped in a
+        ``CPPLUS`` command envelope. Confirmed working via live test on an
+        EMEA 500e (soldRegion=EMEA, sdp=IGNITE).
+
+        ``schedules`` must contain *all* slots (typically three); the backend
+        replaces the entire list on every write.
+        """
+
+        pin_auth = self._pin_auth()
+
+        data = {
+            "command": "CPPLUS",
+            "pinAuth": pin_auth,
+            "schedules": schedules,
+        }
+
+        r = self.sess.request(
+            method="POST",
+            url=self.brand.api.url
+            + f"/v2/accounts/{self.uid}/vehicles/{vin}/ev/schedule/",
+            headers=self._default_aws_headers(self.brand.api.key)
+            | {"content-type": "application/json"},
+            auth=self.aws_auth,
+            json=data,
+        )
+
+        r.raise_for_status()
+        _LOGGER.debug(f"set_charge_schedule_emea ({vin}): {r.text}")
+        r = r.json()
+
+        if "correlationId" not in r:
+            error = r.get("debugMsg", "unknown error")
+            raise Exception(f"set charge schedule (emea) failed: {error} ({r})")
+
+        return r["correlationId"]
+
     def set_charging_level(
         self, vin: str, level: ChargingLevel, max_soc: str | None = None
     ):
