@@ -14,6 +14,10 @@ from requests_auth_aws_sigv4 import AWSSigV4
 from .command import Command
 from .brands import Brand
 
+from botocore.session import get_session
+from botocore.config import Config
+from botocore import UNSIGNED
+
 _LOGGER = logging.getLogger("py_uconnect")
 
 
