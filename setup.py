@@ -20,7 +20,7 @@ setup(
     ],
     description="Python API Client for FCA/Stellantis cars",
     install_requires=[
-        "boto3>=1.35.96",
+        "botocore>=1.36.0",
         "requests>=2.32.3",
         "requests-auth-aws-sigv4>=0.7",
         "dataclasses_json>=0.6.7",
@@ -44,6 +44,6 @@ setup(
     name="py-uconnect",
     packages=find_packages(include=["py_uconnect", "py_uconnect.*"]),
     url="https://github.com/hass-uconnect/py-uconnect",
-    version="0.4.3",
+    version="0.4.4.dev0",
     zip_safe=False,
 )

@@ -1,7 +1,6 @@
 import requests
 import uuid
 import json
-import boto3
 import base64
 import logging
 import http.client as http_client
@@ -114,7 +113,11 @@ class API:
         """Logs into the Uconnect and caches the auth tokens"""
 
         if self.cognito_client is None:
-            self.cognito_client = boto3.client("cognito-identity", self.brand.region)
+            self.cognito_client = get_session().create_client(
+                "cognito-identity",
+                region_name=self.brand.region,
+                config=Config(signature_version=UNSIGNED),
+            )
 
         r = self.sess.request(
             method="GET",
