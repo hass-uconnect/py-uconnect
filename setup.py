@@ -20,7 +20,7 @@ setup(
     ],
     description="Python API Client for FCA/Stellantis cars",
     install_requires=[
-        "botocore>=1.36.0",
+        "botocore>=1.36.0,<1.37.1",
         "requests>=2.32.3",
         "requests-auth-aws-sigv4>=0.7",
         "dataclasses_json>=0.6.7",
