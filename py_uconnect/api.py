@@ -65,6 +65,11 @@ class API:
         self.aws_auth: AWSSigV4 | None = None
 
         self.sess = requests.Session()
+        self.sess.headers.update({"User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/126.0.0.0 Safari/537.36"
+        )})
         self.cognito_client = None
 
         self.expire_time: datetime | None = None
