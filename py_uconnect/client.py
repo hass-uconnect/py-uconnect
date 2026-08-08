@@ -65,6 +65,14 @@ CHARGING_LEVELS = {
     "LEVEL_1": 1,
     "LEVEL_2": 2,
     "LEVEL_3": 3,
+    "LEVEL_4": 4,
+    "LEVEL_5": 5,
+    # EMEA firmware reports the preference as LEVEL_ONE..LEVEL_FIVE
+    "LEVEL_ONE": 1,
+    "LEVEL_TWO": 2,
+    "LEVEL_THREE": 3,
+    "LEVEL_FOUR": 4,
+    "LEVEL_FIVE": 5,
 }
 
 
@@ -80,6 +88,83 @@ class Location:
 
     def __repr__(self):
         return f"lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})"
+
+
+@dataclass_json
+@dataclass
+class ScheduledDays:
+    monday: bool = False
+    tuesday: bool = False
+    wednesday: bool = False
+    thursday: bool = False
+    friday: bool = False
+    saturday: bool = False
+    sunday: bool = False
+
+
+@dataclass_json
+@dataclass
+class ChargeSchedule:
+    """A single EV charge schedule slot.
+
+    EMEA vehicles (e.g. Fiat New 500e) expose up to three of these inline in
+    the v3 vehicle status under ``evInfo.schedules``. The North-American
+    ``/v4/.../ev/schedule/`` endpoint is not used by these cars and returns
+    HTTP 500. Writing is done via ``Client.set_charge_schedule_emea`` which
+    POSTs the full list back to ``/v2/.../ev/schedule/``.
+    """
+
+    enable: bool = False
+    start_time: str = "00:00"
+    end_time: str = "00:00"
+    days: ScheduledDays = field(default_factory=ScheduledDays)
+    charge_to_full: bool = False
+    cabin_priority: bool = False
+    repeat_schedule: bool = True
+    schedule_type: str = "CHARGE"
+
+    @staticmethod
+    def from_api(d: dict) -> "ChargeSchedule":
+        days = d.get("scheduledDays") or {}
+        return ChargeSchedule(
+            enable=bool(d.get("enableScheduleType", False)),
+            start_time=d.get("startTime", "00:00"),
+            end_time=d.get("endTime", "00:00"),
+            days=ScheduledDays(
+                monday=bool(days.get("monday", False)),
+                tuesday=bool(days.get("tuesday", False)),
+                wednesday=bool(days.get("wednesday", False)),
+                thursday=bool(days.get("thursday", False)),
+                friday=bool(days.get("friday", False)),
+                saturday=bool(days.get("saturday", False)),
+                sunday=bool(days.get("sunday", False)),
+            ),
+            charge_to_full=bool(d.get("chargeToFull", False)),
+            cabin_priority=bool(d.get("cabinPriority", False)),
+            repeat_schedule=bool(d.get("repeatSchedule", True)),
+            schedule_type=d.get("scheduleType", "CHARGE"),
+        )
+
+    def to_api(self) -> dict:
+        """Serialise back into the exact shape the backend expects."""
+        return {
+            "chargeToFull": self.charge_to_full,
+            "scheduleType": self.schedule_type,
+            "enableScheduleType": self.enable,
+            "scheduledDays": {
+                "sunday": self.days.sunday,
+                "saturday": self.days.saturday,
+                "tuesday": self.days.tuesday,
+                "wednesday": self.days.wednesday,
+                "thursday": self.days.thursday,
+                "friday": self.days.friday,
+                "monday": self.days.monday,
+            },
+            "startTime": self.start_time,
+            "endTime": self.end_time,
+            "cabinPriority": self.cabin_priority,
+            "repeatSchedule": self.repeat_schedule,
+        }
 
 
 @dataclass_json
@@ -124,13 +209,17 @@ class Vehicle:
     ev_running: bool | None = None
     charging: bool | None = None
     charging_level: int | None = None
-    charging_level_preference: str | None = None
+    charging_level_preference: int | None = None
     state_of_charge: float | None = None
     time_to_fully_charge_l3: int | None = None
     time_to_fully_charge_l2: int | None = None
     time_to_fully_charge_l1: int | None = None
     ev_head_seat: bool | None = None
     ev_cabin_cond: bool | None = None
+    # EV charge schedules (EMEA vehicles expose these inline in v3 status
+    # under evInfo.schedules; the /v4/.../ev/schedule/ endpoint returns 500
+    # for these cars). Read-only view; write via set_charge_schedule_emea.
+    charge_schedules: list[ChargeSchedule] = field(default_factory=list)
 
     # Wheels
     wheel_front_left_pressure: float | None = None
@@ -176,9 +265,14 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     v.battery_state_of_charge = sg(vi, "batteryInfo", "batteryStateOfCharge")
     v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
     v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
-    v.charging_level_preference = sg(ev, "chargePowerPreference")
-    if v.charging_level_preference == "NOT_USED_VALUE":
+    # chargePowerPreference is reported as a word-form string (EMEA:
+    # LEVEL_ONE..LEVEL_FIVE; NA: LEVEL_1..LEVEL_5). Map it to the same 1..5
+    # integer scale as charging_level for consistency (README shows int 5).
+    _pref_raw = sg(ev, "chargePowerPreference")
+    if _pref_raw in (None, "NOT_USED_VALUE"):
         v.charging_level_preference = None
+    else:
+        v.charging_level_preference = CHARGING_LEVELS.get(_pref_raw, None)
 
     v.plugged_in = sg(batt, "plugInStatus")
     v.state_of_charge = sg(batt, "stateOfCharge")
@@ -208,6 +302,13 @@ def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
     csai = sg(ev, "chargeScheduleAdditionalInfo")
     v.ev_head_seat = sg(csai, "headSeat")
     v.ev_cabin_cond = sg(csai, "cabinCond")
+
+    # EMEA charge schedules live inline in the v3 status. Newer NA firmware
+    # instead exposes evInfo.chargeSchedules (different layout) and the v4
+    # endpoint; we only parse the inline EMEA "schedules" list here.
+    sched_raw = sg(ev, "schedules")
+    if isinstance(sched_raw, list):
+        v.charge_schedules = [ChargeSchedule.from_api(x) for x in sched_raw]
 
     v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
     v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
@@ -546,6 +647,29 @@ class Client:
 
         id = self.api.set_charge_schedule(vin, schedule)
         return self._poll_correlation_id(vin, id)
+
+    def set_charge_schedule_emea(
+        self, vin: str, schedules: list[ChargeSchedule], verify: bool = False
+    ):
+        """Set EV charge schedules for EMEA vehicles.
+
+        The backend replaces the *entire* schedule list on every write, so the
+        full set of slots must always be sent — sending a single slot silently
+        resets the others to their defaults. Callers should therefore take the
+        vehicle's current ``charge_schedules``, modify the slot(s) they care
+        about, and pass the whole list back in.
+
+        Uses the ``CPPLUS`` command against ``/v2/.../ev/schedule/`` (confirmed
+        working on Fiat New 500e / EMEA, where the NA ``/v4`` endpoint returns
+        HTTP 500). Returns the correlation id, or the poll result if
+        ``verify`` is True.
+        """
+
+        payload = [s.to_api() for s in schedules]
+        id = self.api.set_charge_schedule_emea(vin, payload)
+        if verify:
+            return self._poll_correlation_id(vin, id)
+        return id
 
     def set_charging_level(
         self, vin: str, level: ChargingLevel, max_soc: str | None = None
