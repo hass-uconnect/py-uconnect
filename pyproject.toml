@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-uconnect"
+dynamic = ["version"]
+description = "Async Python client for the FCA/Stellantis Uconnect cloud API"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Olga Novgorodova", email = "olga@novg.net" }]
+requires-python = ">=3.11"
+dependencies = ["aiohttp>=3.9"]
+keywords = [
+    "fiat",
+    "jeep",
+    "dodge",
+    "ram",
+    "alfa",
+    "romeo",
+    "maserati",
+    "chrysler",
+    "uconnect",
+    "stellantis",
+    "api",
+    "cloud",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-asyncio>=0.24", "aioresponses>=0.7.6"]
+dev = ["py-uconnect[test]", "ruff>=0.6", "mypy>=1.10", "build"]
+
+[project.scripts]
+uconnect = "py_uconnect.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/hass-uconnect/py-uconnect"
+Issues = "https://github.com/hass-uconnect/py-uconnect/issues"
+
+[tool.setuptools]
+packages = ["py_uconnect"]
+
+[tool.setuptools.dynamic]
+version = { attr = "py_uconnect.__version__" }
+
+[tool.setuptools.package-data]
+py_uconnect = ["py.typed"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["py_uconnect"]

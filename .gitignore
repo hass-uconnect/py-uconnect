@@ -1,6 +1,11 @@
 __pycache__
 .venv
+.venv-*
 /*.json
 test.py
 dist
+build
 *.egg-info
+.mypy_cache
+.pytest_cache
+.ruff_cache
