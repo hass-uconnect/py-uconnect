@@ -157,7 +157,7 @@ def test_credentials_expiry() -> None:
 
 async def test_concurrent_requests_log_in_once(http: MockSession, api: API) -> None:
     mock_login(http)
-    http.get(vehicle_url("v1", "remote/status"), payload={}, repeat=True)
+    http.get(vehicle_url("v1", "remote/status/"), payload={}, repeat=True)
 
     await asyncio.gather(
         *(api.get_remote_status("ZFAEFAC39MX000001") for _ in range(5))
@@ -168,7 +168,7 @@ async def test_concurrent_requests_log_in_once(http: MockSession, api: API) -> N
 
 async def test_expiring_credentials_are_renewed(http: MockSession, api: API) -> None:
     mock_login(http, repeat=True)
-    http.get(vehicle_url("v1", "remote/status"), payload={}, repeat=True)
+    http.get(vehicle_url("v1", "remote/status/"), payload={}, repeat=True)
 
     await api.get_remote_status("ZFAEFAC39MX000001")
     await api.get_remote_status("ZFAEFAC39MX000001")
@@ -190,11 +190,11 @@ async def test_expired_token_response_triggers_new_login(
 ) -> None:
     mock_login(http, repeat=True)
     http.get(
-        vehicle_url("v1", "remote/status"),
+        vehicle_url("v1", "remote/status/"),
         status=403,
         payload={"message": "The security token included in the request is expired"},
     )
-    http.get(vehicle_url("v1", "remote/status"), payload={"ok": True})
+    http.get(vehicle_url("v1", "remote/status/"), payload={"ok": True})
 
     assert await api.get_remote_status("ZFAEFAC39MX000001") == {"ok": True}
     assert len(http.calls_to("POST", gigya_url(BRAND, "accounts.login"))) == 2

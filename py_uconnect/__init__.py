@@ -3,7 +3,7 @@
 from .api import API
 from .brands import BRANDS, Brand
 from .client import Client
-from .command import COMMANDS, COMMANDS_BY_NAME, Command
+from .command import COMMANDS, COMMANDS_BY_NAME, Command, TemperatureUnit, hvac_params
 from .exceptions import (
     APIError,
     AuthenticationError,
@@ -13,7 +13,7 @@ from .exceptions import (
     UconnectConnectionError,
     UconnectError,
 )
-from .models import ChargingLevel, Location, Vehicle
+from .models import ChargingLevel, Location, TheftAlarmSuppression, Vehicle
 
 __version__ = "1.0.0"
 
@@ -32,7 +32,10 @@ __all__ = [
     "CommandTimeoutError",
     "Location",
     "PinAuthenticationError",
+    "TemperatureUnit",
+    "TheftAlarmSuppression",
     "UconnectConnectionError",
     "UconnectError",
     "Vehicle",
+    "hvac_params",
 ]

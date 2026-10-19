@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import time
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -94,13 +93,15 @@ def mock_login(
         )
 
 
-def pin_auth_url(brand: Brand = BRAND) -> str:
-    return f"{brand.mfa.url}/v1/accounts/{UID}/ignite/pin/authenticate"
+def pin_auth_url(brand: Brand = BRAND, sdp: str = "ignite") -> str:
+    return f"{brand.mfa.url}/v1/accounts/{UID}/{sdp}/pin/authenticate/"
 
 
-def mock_pin_auth(http: MockSession, brand: Brand = BRAND, **kwargs: Any) -> None:
-    kwargs.setdefault("payload", {"token": PIN_TOKEN})
-    http.post(pin_auth_url(brand), **kwargs)
+def mock_pin_auth(
+    http: MockSession, brand: Brand = BRAND, sdp: str = "ignite", **kwargs: Any
+) -> None:
+    kwargs.setdefault("payload", {"token": PIN_TOKEN, "expiry": 300000})
+    http.post(pin_auth_url(brand, sdp), **kwargs)
 
 
 def api_url(path: str, brand: Brand = BRAND) -> str:
@@ -109,13 +110,6 @@ def api_url(path: str, brand: Brand = BRAND) -> str:
 
 def vehicle_url(version: str, suffix: str = "", vin: str = VIN) -> str:
     return api_url(f"/{version}/accounts/{{uid}}/vehicles/{vin}/{suffix}")
-
-
-def any_vehicle_url(version: str, suffix: str) -> re.Pattern[str]:
-    return re.compile(
-        re.escape(vehicle_url(version, "", "VIN")).replace("VIN", "[^/]+")
-        + re.escape(suffix)
-    )
 
 
 @pytest.fixture

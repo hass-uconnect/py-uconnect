@@ -11,7 +11,7 @@ import aiohttp
 
 from .api import API, JSON
 from .brands import Brand
-from .command import Command
+from .command import Command, resolve_command, schedule_endpoint
 from .exceptions import APIError, CommandTimeoutError
 from .models import (
     ChargingLevel,
@@ -125,7 +125,9 @@ class Client:
         apply_list_item(vehicle, item)
 
         info, location, remote = await asyncio.gather(
-            self.api.get_vehicle_info(vin),
+            self.api.get_vehicle_info(
+                vin, "v4" if "CPCOOP" in vehicle.enabled_services else "v3"
+            ),
             self.api.get_vehicle_location(vin),
             self.api.get_remote_status(vin),
             return_exceptions=True,
@@ -160,10 +162,25 @@ class Client:
 
         return self.vehicles
 
-    async def command(self, vin: str, cmd: Command) -> str:
-        """Sends a remote command, returns the correlation ID of the operation"""
+    async def command(
+        self, vin: str, cmd: Command, params: dict[str, Any] | None = None
+    ) -> str:
+        """Sends a remote command, returns the correlation ID of the operation.
 
-        return await self.api.command(vin, cmd)
+        If the vehicle was loaded by :meth:`refresh`, the variant of the
+        command that fits its services is sent, like the official apps do
+        (e.g. ``START_CHARGE`` instead of ``CNOW`` for vehicles with the
+        ``CNOW2`` service). ``params`` are passed along, see
+        :func:`py_uconnect.command.hvac_params`.
+        """
+
+        if (vehicle := self.vehicles.get(vin)) is not None:
+            resolved = resolve_command(cmd, vehicle.enabled_services)
+            if resolved != cmd:
+                _LOGGER.debug("%s: sending %s instead of %s", vin, resolved, cmd)
+                cmd = resolved
+
+        return await self.api.command(vin, cmd, params)
 
     async def wait_for_operation(
         self,
@@ -178,28 +195,32 @@ class Client:
         :class:`CommandTimeoutError` if no result is reported within
         ``timeout`` seconds.
 
-        The result is taken from the remote operation status endpoint and, as
-        it is not available for every brand and region, from the vehicle
-        notifications.
+        The result is polled from the operation status endpoints (the apps
+        use one for remote commands and another one for the other operations)
+        and, as they are not available everywhere, from the vehicle
+        notifications. An endpoint that returns HTTP 404 is not polled again.
         """
 
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
-        use_status_endpoint = True
+        status_endpoints = [
+            self.api.get_remote_operation_last_status,
+            self.api.get_remote_operation_status,
+        ]
         last_error: Exception | None = None
 
         while True:
             await asyncio.sleep(interval)
 
-            if use_status_endpoint:
+            for endpoint in list(status_endpoints):
                 try:
-                    r = await self.api.get_remote_operation_status(vin, correlation_id)
+                    r = await endpoint(vin, correlation_id)
                     if (result := _remote_operation_result(r)) is not None:
                         return result
                 except APIError as err:
                     last_error = err
                     if err.status == 404:
-                        use_status_endpoint = False
+                        status_endpoints.remove(endpoint)
 
             try:
                 r = await self.api.get_vehicle_notifications(vin)
@@ -215,19 +236,28 @@ class Client:
                 )
 
     async def command_verify(
-        self, vin: str, cmd: Command, timeout: float = 60, interval: float = 2
+        self,
+        vin: str,
+        cmd: Command,
+        params: dict[str, Any] | None = None,
+        timeout: float = 60,
+        interval: float = 2,
     ) -> bool:
         """Sends a remote command and waits for its result, see
-        :meth:`wait_for_operation`.
+        :meth:`command` and :meth:`wait_for_operation`.
         """
 
-        cid = await self.command(vin, cmd)
+        cid = await self.command(vin, cmd, params)
         return await self.wait_for_operation(vin, cid, timeout, interval)
 
     async def set_charging_level(
         self, vin: str, level: ChargingLevel, max_soc: int | None = None
     ) -> str:
-        """Sets the charging power preference, returns the correlation ID"""
+        """Sets the charging power preference, returns the correlation ID.
+
+        ``max_soc`` (in percent) is only supported by vehicles with the
+        ``CSETTING2`` service.
+        """
 
         return await self.api.set_charging_level(vin, level, max_soc)
 
@@ -244,19 +274,39 @@ class Client:
         cid = await self.api.set_charging_level(vin, level, max_soc)
         return await self.wait_for_operation(vin, cid, timeout, interval)
 
-    async def set_charge_schedule(self, vin: str, schedule: dict[str, Any]) -> str:
-        """Sets the EV charge schedules, returns the correlation ID"""
-
-        return await self.api.set_charge_schedule(vin, schedule)
-
-    async def set_charge_schedule_verify(
+    async def set_charge_schedules(
         self,
         vin: str,
-        schedule: dict[str, Any],
+        schedules: list[dict[str, Any]],
+        command: str | None = None,
+    ) -> str:
+        """Sets the EV charge/climate schedules, returns the correlation ID.
+
+        The schedules must be in the format of the vehicle's schedule service,
+        the same as ``Vehicle.charge_schedules``. ``command`` is that service;
+        it is determined from the vehicle's services if not given.
+        """
+
+        if command is None:
+            vehicle = self.vehicles.get(vin)
+            ep = schedule_endpoint(vehicle.enabled_services) if vehicle else None
+            if ep is None:
+                raise ValueError(
+                    f"{vin}: no schedule service known, pass the command explicitly"
+                )
+            command = ep.command
+
+        return await self.api.set_charge_schedules(vin, command, schedules)
+
+    async def set_charge_schedules_verify(
+        self,
+        vin: str,
+        schedules: list[dict[str, Any]],
+        command: str | None = None,
         timeout: float = 60,
         interval: float = 2,
     ) -> bool:
-        """Sets the EV charge schedules and waits for the result"""
+        """Sets the EV charge/climate schedules and waits for the result"""
 
-        cid = await self.api.set_charge_schedule(vin, schedule)
+        cid = await self.set_charge_schedules(vin, schedules, command)
         return await self.wait_for_operation(vin, cid, timeout, interval)

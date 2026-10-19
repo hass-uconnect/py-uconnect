@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from enum import Enum, StrEnum
 from typing import Any
 
-from .command import COMMANDS_BY_NAME, Command
+from .command import Command, schedule_endpoint, supported_commands
 
 
 class ChargingLevel(StrEnum):
@@ -20,6 +20,17 @@ class ChargingLevel(StrEnum):
     LEVEL_THREE = "LEVEL_THREE"
     LEVEL_FOUR = "LEVEL_FOUR"
     LEVEL_FIVE = "LEVEL_FIVE"
+
+
+class TheftAlarmSuppression(StrEnum):
+    """For how long theft alarm notifications are suppressed"""
+
+    TWO_HOURS = "TWOHOURS"
+    FOUR_HOURS = "FOURHRS"
+    TWELVE_HOURS = "TWELVEHRS"
+    ONE_DAY = "TWENTYFOURHRS"
+    THREE_DAYS = "THREEDAYS"
+    SEVEN_DAYS = "SEVENDAYS"
 
 
 # Charging level reported while charging (``evInfo.battery.chargingLevel``)
@@ -93,11 +104,14 @@ def get_bool(d: Any, *keys: str | int) -> bool | None:
 def get_eq(d: Any, expected: str, *keys: str | int) -> bool | None:
     """Whether a nested string value equals the expected one (case-insensitive).
 
-    Returns None if the value is missing.
+    Returns None if the value is missing or not available (``NA``).
     """
 
     v = get_str(d, *keys)
-    return v.upper() == expected.upper() if v is not None else None
+    if v is None or v.upper() in ("", "NA"):
+        return None
+
+    return v.upper() == expected.upper()
 
 
 def get_timestamp(d: Any, *keys: str | int) -> datetime | None:
@@ -176,6 +190,8 @@ class Vehicle(_Serializable):
     sdp: str | None = None
     image_url: str | None = None
     fuel_type: str | None = None
+    # ACTIVE if the owner enabled privacy mode in the vehicle (no data sharing)
+    privacy_mode: str | None = None
 
     # Status
     ignition_on: bool | None = None
@@ -196,7 +212,7 @@ class Vehicle(_Serializable):
     battery_state_of_charge: str | None = None
     oil_level: int | None = None
     fuel_low: bool | None = None
-    fuel_amount: int | None = None
+    fuel_amount: float | None = None
 
     # EV related
     plugged_in: bool | None = None
@@ -210,6 +226,9 @@ class Vehicle(_Serializable):
     time_to_fully_charge_l1: int | None = None
     ev_head_seat: bool | None = None
     ev_cabin_cond: bool | None = None
+    # Charge/climate schedules, in the format of the vehicle's schedule
+    # service (see command.SCHEDULE_ENDPOINTS)
+    charge_schedules: list[dict[str, Any]] | None = None
 
     # Wheels
     wheel_front_left_pressure: float | None = None
@@ -234,6 +253,16 @@ class Vehicle(_Serializable):
     # Windows
     window_driver_closed: bool | None = None
     window_passenger_closed: bool | None = None
+    window_rear_left_closed: bool | None = None
+    window_rear_right_closed: bool | None = None
+    sunroof_closed: bool | None = None
+
+    liftgate_locked: bool | None = None
+
+    # Climate
+    hvac_on: bool | None = None
+    hvac_temperature: float | None = None
+    hvac_temperature_unit: str | None = None
 
     location: Location | None = None
 
@@ -257,7 +286,7 @@ class Vehicle(_Serializable):
     def supports(self, cmd: Command) -> bool:
         """Whether the vehicle supports the given command"""
 
-        return cmd.name in self.supported_commands
+        return cmd.enabled_by(self.enabled_services)
 
 
 def apply_list_item(v: Vehicle, p: dict[str, Any]) -> None:
@@ -266,12 +295,13 @@ def apply_list_item(v: Vehicle, p: dict[str, Any]) -> None:
     v.raw_list_item = p
     v.nickname = get_str(p, "nickname")
     v.make = get_str(p, "make")
-    v.model = get_str(p, "modelDescription")
-    v.year = get_int(p, "tsoModelYear")
+    v.model = get_str(p, "modelDescription") or get_str(p, "model")
+    v.year = get_int(p, "year") or get_int(p, "tsoModelYear")
     v.region = get_str(p, "soldRegion")
     v.sdp = get_str(p, "sdp")
     v.image_url = get_str(p, "vehicleImageURL")
     v.fuel_type = get_str(p, "fuelType")
+    v.privacy_mode = get_str(p, "privacyMode")
 
     services = p.get("services")
     v.enabled_services = [
@@ -282,7 +312,23 @@ def apply_list_item(v: Vehicle, p: dict[str, Any]) -> None:
         and get_bool(s, "vehicleCapable")
         and get_bool(s, "serviceEnabled")
     ]
-    v.supported_commands = [s for s in v.enabled_services if s in COMMANDS_BY_NAME]
+    v.supported_commands = supported_commands(v.enabled_services)
+
+    # The list may include a status snapshot, used until (or if) the
+    # detailed status is loaded
+    if isinstance(p.get("vehicleInfo"), dict) or isinstance(p.get("phevInfo"), dict):
+        apply_vehicle_info(
+            v,
+            {
+                "vehicleInfo": p.get("vehicleInfo"),
+                "evInfo": p.get("phevInfo"),
+                "timestamp": p.get("vInfoTimestamp"),
+            },
+            raw=False,
+        )
+
+    if isinstance(p.get("location"), dict):
+        v.location = parse_location(p["location"])
 
 
 def _charging_level_preference(v: str | None) -> ChargingLevel | None:
@@ -293,10 +339,11 @@ def _charging_level_preference(v: str | None) -> ChargingLevel | None:
         return None
 
 
-def apply_vehicle_info(v: Vehicle, p: dict[str, Any]) -> None:
+def apply_vehicle_info(v: Vehicle, p: dict[str, Any], raw: bool = True) -> None:
     """Updates the vehicle from the vehicle status (``vehicleInfo``/``evInfo``)"""
 
-    v.raw_info = p
+    if raw:
+        v.raw_info = p
     vi = _get(p, "vehicleInfo")
     ev = _get(p, "evInfo")
     batt = _get(ev, "battery")
@@ -333,7 +380,7 @@ def apply_vehicle_info(v: Vehicle, p: dict[str, Any]) -> None:
     v.range_total_unit = v.distance_to_empty_unit
 
     v.fuel_low = get_bool(vi, "fuel", "isFuelLevelLow")
-    v.fuel_amount = get_int(vi, "fuel", "fuelAmountLevel")
+    v.fuel_amount = get_float(vi, "fuel", "fuelAmountLevel")
     v.oil_level = get_int(vi, "oilLevel", "oilLevel")
 
     v.ignition_on = get_eq(ev, "ON", "ignitionStatus")
@@ -341,6 +388,16 @@ def apply_vehicle_info(v: Vehicle, p: dict[str, Any]) -> None:
     csai = _get(ev, "chargeScheduleAdditionalInfo")
     v.ev_head_seat = get_bool(csai, "headSeat")
     v.ev_cabin_cond = get_bool(csai, "cabinCond")
+
+    ep = schedule_endpoint(v.enabled_services)
+    fields = (
+        [ep.status_field]
+        if ep
+        else ["chargeSchedulesV4", "chargeSchedulesV3", "schedules", "chargeSchedules"]
+    )
+    v.charge_schedules = next(
+        (x for f in fields if isinstance(x := _get(ev, f), list)), None
+    )
 
     v.time_to_fully_charge_l3 = _non_negative(get_int(batt, "timeToFullyChargeL3"))
     v.time_to_fully_charge_l2 = _non_negative(get_int(batt, "timeToFullyChargeL2"))
@@ -380,16 +437,25 @@ def apply_remote_status(v: Vehicle, p: dict[str, Any]) -> None:
         v.door_rear_right_locked = get_eq(p, "LOCKED", "doors", "rightRear", "status")
 
     if "windows" in p:
-        v.window_driver_closed = get_eq(p, "CLOSED", "windows", "driver", "status")
-        v.window_passenger_closed = get_eq(
-            p, "CLOSED", "windows", "passenger", "status"
-        )
+        for attr, key in (
+            ("window_driver_closed", "driver"),
+            ("window_passenger_closed", "passenger"),
+            ("window_rear_left_closed", "leftRear"),
+            ("window_rear_right_closed", "rightRear"),
+            ("sunroof_closed", "sunroof"),
+        ):
+            setattr(v, attr, get_eq(p, "CLOSED", "windows", key, "status"))
 
     if "engine" in p:
         v.ignition_on = get_eq(p, "ON", "engine", "status")
 
     v.trunk_locked = get_eq(p, "LOCKED", "trunk", "status")
+    v.liftgate_locked = get_eq(p, "LOCKED", "liftGate", "status")
     v.ev_running = get_eq(p, "ON", "evRunning", "status")
+
+    v.hvac_on = get_eq(p, "ON", "hvac", "status")
+    v.hvac_temperature = get_float(p, "hvac", "temperature", "value")
+    v.hvac_temperature_unit = get_str(p, "hvac", "temperature", "unit")
     v.timestamp_status = get_timestamp(p, "timestamp")
 
 
