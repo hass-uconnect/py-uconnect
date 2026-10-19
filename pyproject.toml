@@ -39,7 +39,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8", "pytest-asyncio>=0.24", "aioresponses>=0.7.6"]
+test = ["pytest>=8", "pytest-asyncio>=0.24"]
 dev = ["py-uconnect[test]", "ruff>=0.6", "mypy>=1.10", "build"]
 
 [project.scripts]
@@ -69,6 +69,8 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "RUF"]
+# Timeouts are passed to aiohttp or bound polling loops
+ignore = ["ASYNC109"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -1,16 +1,30 @@
+"""Remote commands that can be sent to a vehicle.
+
+A command is POSTed as ``{"command": <name>, "pinAuth": <token>}`` to
+``/<api_version>/accounts/<uid>/vehicles/<vin>/<url>``. The API answers with a
+correlation ID which can be used to poll for the result.
+
+The command names double as service names: a vehicle supports a command if the
+service with the same name is listed as capable and enabled for it.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Command:
+    """A remote command"""
+
     name: str
     url: str = "remote"
     api_version: str = "v1"
+    # Sent instead if the API rejects this command with HTTP 403
+    # (some vehicles only accept the newer variant)
     fallback: Command | None = None
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -35,21 +49,11 @@ COMMAND_HVAC_TARGET_TEMP = Command(name="ROHVACTMP", api_version="v2")
 
 COMMAND_DEEP_REFRESH_V2 = Command(name="DEEPREFRESH2", url="ev", api_version="v2")
 COMMAND_DEEP_REFRESH = Command(
-    name="DEEPREFRESH",
-    url="ev",
-    fallback=COMMAND_DEEP_REFRESH_V2,
+    name="DEEPREFRESH", url="ev", fallback=COMMAND_DEEP_REFRESH_V2
 )
 
-COMMAND_CHARGE_V4 = Command(
-    name="START_CHARGE",
-    url="ev/chargenow",
-    api_version="v4",
-)
-COMMAND_CHARGE = Command(
-    name="CNOW",
-    url="ev/chargenow",
-    fallback=COMMAND_CHARGE_V4,
-)
+COMMAND_CHARGE_V4 = Command(name="START_CHARGE", url="ev/chargenow", api_version="v4")
+COMMAND_CHARGE = Command(name="CNOW", url="ev/chargenow", fallback=COMMAND_CHARGE_V4)
 
 COMMAND_REFRESH_LOCATION = Command(name="VF", url="location")
 

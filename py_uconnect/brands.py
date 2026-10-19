@@ -1,71 +1,80 @@
+"""Brand and region configurations.
+
+Each brand/region combination of the official apps uses its own Gigya (SAP
+Customer Data Cloud) login site and API key, while the vehicle API itself is
+shared per region (EMEA/APAC/LATAM vs. North America).
+"""
+
+from __future__ import annotations
+
 from dataclasses import dataclass
 
-API_URL_EU = "https://channels.sdpr-01.fcagcv.com"
-API_URL_US = "https://channels.sdpr-02.fcagcv.com"
+REGION_EU = "eu-west-1"
+REGION_US = "us-east-1"
+
+LOCALE_EU = "de_de"
+LOCALE_US = "en_us"
 
 TOKEN_URL_EU = "https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token"
 TOKEN_URL_US = "https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token"
 TOKEN_URL_US_PREP = "https://authz.sdpr-02.prep.fcagcv.com/v2/cognito/identity/token"
 
-LOCALE_EU = "de_de"
-LOCALE_US = "en_us"
 
-REGION_US = "us-east-1"
-REGION_EU = "eu-west-1"
+@dataclass(frozen=True)
+class Endpoint:
+    """An API Gateway endpoint: base URL and the matching ``x-api-key``"""
 
-
-@dataclass
-class API:
     url: str
     key: str
 
 
-API_EU = API(
+API_EU = Endpoint(
     url="https://channels.sdpr-01.fcagcv.com",
     key="2wGyL6PHec9o1UeLPYpoYa1SkEWqeBur9bLsi24i",
 )
 
-API_US = API(
+API_US = Endpoint(
     url="https://channels.sdpr-02.fcagcv.com",
     key="OgNqp2eAv84oZvMrXPIzP8mR8a6d9bVm1aaH9LqU",
 )
 
-
-@dataclass
-class Auth:
-    url: str
-    token: str
-
-
-AUTH_EU = Auth(
+MFA_EU = Endpoint(
     url="https://mfa.fcl-01.fcagcv.com",
-    token="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
+    key="JWRYW7IYhW9v0RqDghQSx4UcRYRILNmc8zAuh5ys",
 )
 
-AUTH_US = Auth(
+MFA_US = Endpoint(
     url="https://mfa.fcl-02.fcagcv.com",
-    token="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
+    key="fNQO6NjR1N6W0E5A6sTzR3YY4JGbuPv48Nj9aZci",
 )
 
-AUTH_US_PREP = Auth(
+MFA_US_PREP = Endpoint(
     url="https://mfa.fcl-02.prep.fcagcv.com",
-    token="lHBEtsqT1Y5oKvzhvA9KW6rkirU3ZtGf44jTIiQV",
+    key="lHBEtsqT1Y5oKvzhvA9KW6rkirU3ZtGf44jTIiQV",
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class Brand:
+    """Configuration of a brand in a given market"""
+
     name: str
+    # AWS region of the Cognito identity pool and the API gateway
     region: str
+    # Gigya API key and login site
     login_api_key: str
     login_url: str
+    # Exchanges a Gigya JWT for a Cognito identity token
     token_url: str
-    api: API
-    auth: Auth
+    # Vehicle API
+    api: Endpoint
+    # PIN authentication API
+    mfa: Endpoint
     locale: str
+    # Value of the ``brand`` filter when listing vehicles
     brand_code: str
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -76,7 +85,7 @@ FIAT_EU = Brand(
     login_url="https://loginmyuconnect.fiat.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="FIAT",
 )
@@ -88,7 +97,7 @@ FIAT_US = Brand(
     login_url="https://login-us.fiat.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -100,7 +109,7 @@ FIAT_ASIA = Brand(
     login_url="https://login-iap.fiat.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="FIAT",
 )
@@ -112,7 +121,7 @@ FIAT_CANADA = Brand(
     login_url="https://login-stage-us.fiat.com",
     token_url=TOKEN_URL_US_PREP,
     api=API_US,
-    auth=AUTH_US_PREP,
+    mfa=MFA_US_PREP,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -124,7 +133,7 @@ ALFA_ROMEO_US_CANADA = Brand(
     login_url="https://login-us.alfaromeo.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -136,7 +145,7 @@ ALFA_ROMEO_ASIA = Brand(
     login_url="https://login-iap.alfaromeo.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="ALFAROMEO",
 )
@@ -148,7 +157,7 @@ ALFA_ROMEO_EU = Brand(
     login_url="https://login.alfaromeo.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="ALFAROMEO",
 )
@@ -160,7 +169,7 @@ CHRYSLER_CANADA = Brand(
     login_url="https://login-stage-us.chrysler.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -172,7 +181,7 @@ CHRYSLER_US = Brand(
     login_url="https://login-us.chrysler.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -184,7 +193,7 @@ MASERATI_EU = Brand(
     login_url="https://login.maserati.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="MASERATI",
 )
@@ -196,7 +205,7 @@ MASERATI_ASIA = Brand(
     login_url="https://accounts.au1.gigya.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="MASERATI",
 )
@@ -208,7 +217,7 @@ MASERATI_US_CANADA = Brand(
     login_url="https://login-us.maserati.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -220,7 +229,7 @@ JEEP_EU = Brand(
     login_url="https://login.jeep.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="REST",
 )
@@ -232,7 +241,7 @@ JEEP_US = Brand(
     login_url="https://login-us.jeep.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -244,7 +253,7 @@ JEEP_ASIA = Brand(
     login_url="https://login-iap.jeep.com",
     token_url=TOKEN_URL_EU,
     api=API_EU,
-    auth=AUTH_EU,
+    mfa=MFA_EU,
     locale=LOCALE_EU,
     brand_code="REST",
 )
@@ -256,7 +265,7 @@ DODGE_US = Brand(
     login_url="https://login-us.dodge.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
@@ -268,12 +277,12 @@ RAM_US = Brand(
     login_url="https://login-us.ramtrucks.com",
     token_url=TOKEN_URL_US,
     api=API_US,
-    auth=AUTH_US,
+    mfa=MFA_US,
     locale=LOCALE_US,
     brand_code="ALL",
 )
 
-BRANDS = {
+BRANDS: dict[str, Brand] = {
     FIAT_EU.name: FIAT_EU,
     FIAT_US.name: FIAT_US,
     FIAT_CANADA.name: FIAT_CANADA,

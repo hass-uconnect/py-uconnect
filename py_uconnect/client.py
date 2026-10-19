@@ -1,563 +1,262 @@
-from dataclasses import dataclass, field
-from dataclasses_json import dataclass_json
-from typing import Any, Dict
-from datetime import datetime, timedelta
-from time import sleep
+"""High-level async client: keeps parsed vehicle data and runs remote commands"""
 
-from requests.exceptions import HTTPError
+from __future__ import annotations
 
-from .api import API, ChargingLevel
+import asyncio
+import logging
+from types import TracebackType
+from typing import Any, Self
+
+import aiohttp
+
+from .api import API, JSON
 from .brands import Brand
-from .command import Command, COMMANDS_BY_NAME
+from .command import Command
+from .exceptions import APIError, CommandTimeoutError
+from .models import (
+    ChargingLevel,
+    Vehicle,
+    apply_list_item,
+    apply_remote_status,
+    apply_vehicle_info,
+    get_str,
+    parse_location,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+OPERATION_SUCCEEDED = ("success", "succeeded", "completed", "complete")
+OPERATION_FAILED = ("failure", "failed", "error", "rejected", "timeout")
 
 
-def convert(v: Any) -> Any:
-    if not isinstance(v, str):
-        return v
-
-    if v == "null":
+def _operation_result(status: str | None) -> bool | None:
+    if status is None:
         return None
 
-    try:
-        v = int(v)
-    except (ValueError, TypeError):
-        try:
-            v = float(v)
-        except (ValueError, TypeError):
-            pass
-
-    return v
-
-
-def sg(dct: Any, *keys: str) -> Any:
-    if not isinstance(dct, dict):
-        return None
-
-    for key in keys:
-        try:
-            dct = dct[key]
-        except KeyError:
-            return None
-
-    return convert(dct)
-
-
-def sg_eq(dct: Any, expect: Any, *keys: str) -> bool | None:
-    v = sg(dct, *keys)
-
-    if v is None:
-        return None
-
-    return v == expect
-
-
-def sg_eq_str(dct: Any, expect: str, *keys: str) -> bool:
-    v = sg(dct, *keys)
-
-    if not isinstance(v, str):
+    status = status.lower()
+    if status in OPERATION_SUCCEEDED:
+        return True
+    if status in OPERATION_FAILED:
         return False
 
-    return v.lower() == expect.lower()
+    return None
 
 
-CHARGING_LEVELS = {
-    "DEFAULT": 0,
-    "LEVEL_1": 1,
-    "LEVEL_2": 2,
-    "LEVEL_3": 3,
-}
+def _remote_operation_result(r: JSON) -> bool | None:
+    return _operation_result(get_str(r, "status") or get_str(r, "responseStatus"))
 
 
-@dataclass_json
-@dataclass
-class Location:
-    longitude: float | None = None
-    latitude: float | None = None
-    altitude: float | None = None
-    bearing: float | None = None
-    is_approximate: bool | None = None
-    updated: datetime | None = None
+def _notification_result(r: JSON, correlation_id: str) -> bool | None:
+    items = r.get("notifications", {})
+    items = items.get("items") if isinstance(items, dict) else None
 
-    def __repr__(self):
-        return f"lat: {self.latitude}, lon: {self.longitude} (updated {self.updated})"
+    for item in items if isinstance(items, list) else []:
+        if isinstance(item, dict) and item.get("correlationId") == correlation_id:
+            result = _operation_result(get_str(item, "notification", "data", "status"))
+            if result is not None:
+                return result
 
-
-@dataclass_json
-@dataclass
-class Vehicle:
-    vin: str
-
-    # General info
-    nickname: str
-    make: str
-    model: str
-    year: str
-    region: str
-
-    sdp: str | None = None
-    image_url: str | None = None
-    fuel_type: str | None = None
-
-    # Status
-    ignition_on: bool | None = None
-    trunk_locked: bool | None = None
-
-    odometer: float | None = None
-    odometer_unit: str | None = None
-    days_to_service: int | None = None
-    distance_to_service: int | None = None
-    distance_to_service_unit: str | None = None
-    distance_to_empty: int | None = None
-    distance_to_empty_unit: str | None = None
-    range_gas: int | None = None
-    range_gas_unit: str | None = None
-    range_total: int | None = None
-    range_total_unit: str | None = None
-    battery_voltage: float | None = None
-    battery_state_of_charge: str | None = None
-    oil_level: int | None = None
-    fuel_low: bool | None = None
-    fuel_amount: int | None = None
-
-    # EV related
-    plugged_in: bool | None = None
-    ev_running: bool | None = None
-    charging: bool | None = None
-    charging_level: int | None = None
-    charging_level_preference: str | None = None
-    state_of_charge: float | None = None
-    time_to_fully_charge_l3: int | None = None
-    time_to_fully_charge_l2: int | None = None
-    time_to_fully_charge_l1: int | None = None
-    ev_head_seat: bool | None = None
-    ev_cabin_cond: bool | None = None
-
-    # Wheels
-    wheel_front_left_pressure: float | None = None
-    wheel_front_left_pressure_unit: str | None = None
-    wheel_front_left_pressure_warning: bool | None = None
-    wheel_front_right_pressure: float | None = None
-    wheel_front_right_pressure_unit: str | None = None
-    wheel_front_right_pressure_warning: bool | None = None
-    wheel_rear_left_pressure: float | None = None
-    wheel_rear_left_pressure_unit: str | None = None
-    wheel_rear_left_pressure_warning: bool | None = None
-    wheel_rear_right_pressure: float | None = None
-    wheel_rear_right_pressure_unit: str | None = None
-    wheel_rear_right_pressure_warning: bool | None = None
-
-    # Doors
-    door_driver_locked: bool | None = None
-    door_passenger_locked: bool | None = None
-    door_rear_left_locked: bool | None = None
-    door_rear_right_locked: bool | None = None
-
-    # Windows
-    window_driver_closed: bool | None = None
-    window_passenger_closed: bool | None = None
-
-    location: Location | None = None
-    supported_commands: list[str] = field(default_factory=list)
-    enabled_services: list[str] = field(default_factory=list)
-
-    timestamp_info: datetime | None = None
-    timestamp_status: datetime | None = None
-
-    def __repr__(self):
-        return f"{self.vin} (nick: {self.nickname})"
-
-
-def _update_vehicle(v: Vehicle, p: dict) -> Vehicle:
-    vi = sg(p, "vehicleInfo")
-    ev = sg(p, "evInfo")
-    batt = sg(ev, "battery")
-
-    v.battery_voltage = sg(vi, "batteryInfo", "batteryVoltage", "value")
-    v.battery_state_of_charge = sg(vi, "batteryInfo", "batteryStateOfCharge")
-    v.charging = sg_eq(batt, "CHARGING", "chargingStatus")
-    v.charging_level = CHARGING_LEVELS.get(sg(batt, "chargingLevel"), None)
-    v.charging_level_preference = sg(ev, "chargePowerPreference")
-    if v.charging_level_preference == "NOT_USED_VALUE":
-        v.charging_level_preference = None
-
-    v.plugged_in = sg(batt, "plugInStatus")
-    v.state_of_charge = sg(batt, "stateOfCharge")
-
-    v.days_to_service = sg(vi, "daysToService")
-    v.distance_to_service = sg(vi, "distanceToService", "distanceToService", "value")
-    v.distance_to_service_unit = sg(
-        vi, "distanceToService", "distanceToService", "unit"
-    )
-    v.distance_to_empty = sg(batt, "distanceToEmpty", "value") or sg(
-        vi, "fuel", "distanceToEmpty", "value"
-    )
-    v.distance_to_empty_unit = sg(batt, "distanceToEmpty", "unit") or sg(
-        vi, "fuel", "distanceToEmpty", "unit"
-    )
-    v.range_gas = sg(batt, "gasRange")
-    v.range_gas_unit = v.distance_to_empty_unit
-    v.range_total = sg(batt, "totalRange")
-    v.range_total_unit = v.distance_to_empty_unit
-
-    v.fuel_low = sg(vi, "fuel", "isFuelLevelLow")
-    v.fuel_amount = sg(vi, "fuel", "fuelAmountLevel")
-    v.oil_level = sg(vi, "oilLevel", "oilLevel")
-
-    v.ignition_on = sg_eq(ev, "ON", "ignitionStatus")
-
-    csai = sg(ev, "chargeScheduleAdditionalInfo")
-    v.ev_head_seat = sg(csai, "headSeat")
-    v.ev_cabin_cond = sg(csai, "cabinCond")
-
-    v.time_to_fully_charge_l3 = sg(batt, "timeToFullyChargeL3")
-    v.time_to_fully_charge_l2 = sg(batt, "timeToFullyChargeL2")
-    v.time_to_fully_charge_l1 = sg(batt, "timeToFullyChargeL1")
-
-    # Some vehicles report -1
-    if v.time_to_fully_charge_l3 is not None and v.time_to_fully_charge_l3 < 0:
-        v.time_to_fully_charge_l3 = None
-    if v.time_to_fully_charge_l2 is not None and v.time_to_fully_charge_l2 < 0:
-        v.time_to_fully_charge_l2 = None
-    if v.time_to_fully_charge_l1 is not None and v.time_to_fully_charge_l1 < 0:
-        v.time_to_fully_charge_l1 = None
-
-    v.odometer = sg(vi, "odometer", "odometer", "value")
-    v.odometer_unit = sg(vi, "odometer", "odometer", "unit")
-
-    if isinstance(vi, dict) and "tyrePressure" in vi:
-        tp = {x["type"]: x for x in vi["tyrePressure"]}
-
-        v.wheel_front_left_pressure = sg(tp, "FL", "pressure", "value")
-        v.wheel_front_left_pressure_unit = sg(tp, "FL", "pressure", "unit")
-        v.wheel_front_left_pressure_warning = sg(tp, "FL", "warning")
-
-        v.wheel_front_right_pressure = sg(tp, "FR", "pressure", "value")
-        v.wheel_front_right_pressure_unit = sg(tp, "FR", "pressure", "unit")
-        v.wheel_front_right_pressure_warning = sg(tp, "FR", "warning")
-
-        v.wheel_rear_left_pressure = sg(tp, "RL", "pressure", "value")
-        v.wheel_rear_left_pressure_unit = sg(tp, "RL", "pressure", "unit")
-        v.wheel_rear_left_pressure_warning = sg(tp, "RL", "warning")
-
-        v.wheel_rear_right_pressure = sg(tp, "RR", "pressure", "value")
-        v.wheel_rear_right_pressure_unit = sg(tp, "RR", "pressure", "unit")
-        v.wheel_rear_right_pressure_warning = sg(tp, "RR", "warning")
-
-    v.timestamp_info = (
-        datetime.fromtimestamp(p["timestamp"] / 1000).astimezone()
-        if "timestamp" in p
-        else None
-    )
-
-    return v
+    return None
 
 
 class Client:
+    """High-level async Uconnect client.
+
+    :meth:`refresh` loads the vehicles of the account and their state into
+    :attr:`vehicles`. Remote commands can be sent with :meth:`command` or
+    :meth:`command_verify`, the latter waits for the result. For endpoints
+    without a high-level wrapper use the low-level client in :attr:`api`.
+    """
+
     def __init__(
         self,
         email: str,
         password: str,
-        pin: str,
+        pin: str | None,
         brand: Brand,
-        disable_tls_verification: bool = False,
-        dev_mode: bool = False,
-        trace: bool = False,
+        *,
+        session: aiohttp.ClientSession | None = None,
+        timeout: float = 30,
     ):
-        self.api = API(
-            email,
-            password,
-            pin,
-            brand,
-            disable_tls_verification=disable_tls_verification,
-            dev_mode=dev_mode,
-            trace=trace,
-        )
-        self.vehicles: Dict[str, Vehicle] = {}
+        self.api = API(email, password, pin, brand, session=session, timeout=timeout)
+        self.vehicles: dict[str, Vehicle] = {}
+        self._info_unsupported: set[str] = set()
 
-    def set_debug(self, debug: bool):
-        """Sets debug logging on/off"""
+    async def __aenter__(self) -> Self:
+        return self
 
-        self.api.set_debug(debug)
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        await self.close()
 
-    def set_tls_verification(self, verify: bool):
-        """Enable or disable TLS certificate verification"""
+    async def close(self) -> None:
+        """Closes the HTTP session if it was created by the client"""
 
-        self.api.set_tls_verification(verify)
+        await self.api.close()
 
-    def set_pin(self, pin: str):
-        self.api.set_pin(pin)
+    def set_pin(self, pin: str | None) -> None:
+        """Sets the PIN used for remote commands"""
 
-    def refresh(self):
-        """Refreshes all the vehicle data and caches it locally"""
+        self.api.pin = pin
 
-        vehicles = self.api.list_vehicles()
+    async def refresh(self) -> dict[str, Vehicle]:
+        """Loads the vehicles of the account and their state into
+        :attr:`vehicles`, removing those which are no longer in the account.
+        """
 
-        for x in vehicles:
-            vin = x["vin"]
+        items = [x for x in await self.api.list_vehicles() if x.get("vin")]
 
-            if vin not in self.vehicles:
-                vehicle = Vehicle(
-                    vin=vin,
-                    nickname=sg(x, "nickname"),
-                    make=sg(x, "make"),
-                    model=sg(x, "modelDescription"),
-                    year=sg(x, "tsoModelYear"),
-                    region=sg(x, "soldRegion"),
-                )
-                self.vehicles[vin] = vehicle
-            else:
-                vehicle = self.vehicles[vin]
+        await asyncio.gather(*(self._refresh_vehicle(x) for x in items))
 
-            vehicle.sdp = sg(x, "sdp")
-            vehicle.image_url = sg(x, "vehicleImageURL")
-            vehicle.fuel_type = sg(x, "fuelType")
-
-            try:
-                info = self.api.get_vehicle(vin)
-                _update_vehicle(vehicle, info)
-            except HTTPError as err:
-                status_code = (
-                    err.response.status_code
-                    if err.response is not None
-                    else None
-                )
-                if status_code in (400, 404):
-                    if vin in self.vehicles:
-                        del self.vehicles[vin]
-
-                    continue
-                raise
-
-            try:
-                loc = self.api.get_vehicle_location(vin)
-
-                updated = (
-                    datetime.fromtimestamp(loc["timeStamp"] / 1000).astimezone()
-                    if "timeStamp" in loc
-                    else None
-                )
-
-                vehicle.location = Location(
-                    longitude=sg(loc, "longitude"),
-                    latitude=sg(loc, "latitude"),
-                    altitude=sg(loc, "altitude"),
-                    bearing=sg(loc, "bearing"),
-                    is_approximate=sg(loc, "isLocationApprox"),
-                    updated=updated,
-                )
-            except Exception:
-                pass
-
-            try:
-                s = self.api.get_vehicle_status(vin)
-
-                if "doors" in s:
-                    vehicle.door_driver_locked = sg_eq(
-                        s, "LOCKED", "doors", "driver", "status"
-                    )
-                    vehicle.door_passenger_locked = sg_eq(
-                        s, "LOCKED", "doors", "passenger", "status"
-                    )
-                    vehicle.door_rear_left_locked = sg_eq(
-                        s, "LOCKED", "doors", "leftRear", "status"
-                    )
-                    vehicle.door_rear_right_locked = sg_eq(
-                        s, "LOCKED", "doors", "rightRear", "status"
-                    )
-
-                if "windows" in s:
-                    vehicle.window_driver_closed = sg_eq(
-                        s, "CLOSED", "windows", "driver", "status"
-                    )
-                    vehicle.window_passenger_closed = sg_eq(
-                        s, "CLOSED", "windows", "passenger", "status"
-                    )
-
-                if "engine" in s:
-                    vehicle.ignition_on = sg_eq(s, "ON", "engine", "status")
-
-                vehicle.trunk_locked = sg_eq(s, "LOCKED", "trunk", "status")
-                vehicle.ev_running = sg_eq(s, "ON", "evRunning", "status")
-
-                vehicle.timestamp_status = (
-                    datetime.fromtimestamp(s["timestamp"] / 1000).astimezone()
-                    if "timestamp" in s
-                    else None
-                )
-            except Exception:
-                pass
-
-            enabled_services = []
-            if "services" in x:
-                enabled_services = [
-                    v["service"]
-                    for v in x["services"]
-                    if sg(v, "vehicleCapable") and sg(v, "serviceEnabled")
-                ]
-
-            vehicle.enabled_services = enabled_services
-            vehicle.supported_commands = [
-                v for v in enabled_services if v in COMMANDS_BY_NAME
-            ]
-
-    def get_vehicles(self):
-        """Returns all vehicles data. Must execute refresh method before."""
+        vins = {x["vin"] for x in items}
+        for vin in list(self.vehicles):
+            if vin not in vins:
+                del self.vehicles[vin]
 
         return self.vehicles
 
-    def _get_commands_statuses(self, vin: str) -> dict:
-        r = self.api.get_vehicle_notifications(vin)
+    async def _refresh_vehicle(self, item: JSON) -> None:
+        vin: str = item["vin"]
+        vehicle = self.vehicles.get(vin) or Vehicle(vin=vin)
+        apply_list_item(vehicle, item)
 
-        if "notifications" not in r or "items" not in r["notifications"]:
-            return {}
-
-        return {
-            x["correlationId"]: sg_eq_str(
-                x, "success", "notification", "data", "status"
-            )
-            for x in r["notifications"]["items"]
-            if "correlationId" in x
-        }
-
-    def _poll_correlation_id(
-        self,
-        vin: str,
-        id: str,
-        timeout: timedelta = timedelta(seconds=60),
-        interval: timedelta = timedelta(seconds=2),
-    ) -> bool:
-        start = datetime.now()
-        last_error: Exception | None = None
-
-        while datetime.now() - start < timeout:
-            sleep(interval.seconds)
-
-            try:
-                status = self.get_remote_operation_status(vin, id)
-
-                result = sg(status, "status") or sg(status, "responseStatus")
-
-                if isinstance(result, str):
-                    result = result.lower()
-
-                    if result in ("success", "succeeded", "completed", "complete"):
-                        return True
-
-                    if result in ("failure", "failed", "error", "rejected"):
-                        return False
-
-            except (ConnectionError, TimeoutError, ValueError, HTTPError) as err:
-                # Some brands/regions return 404 for the remote-operation status
-                # endpoint even though the command itself succeeds (see issue #105).
-                # Don't abort the poll on the HTTP error: fall through to the
-                # notifications-based fallback below, which reports the status via
-                # a working endpoint.
-                last_error = err
-
-            r = self._get_commands_statuses(vin)
-            if id in r:
-                return r[id]
-
-        raise Exception(
-            f"unable to obtain execution status: timed out "
-            f"(id {id}; last_error={last_error})"
+        info, location, remote = await asyncio.gather(
+            self.api.get_vehicle_info(vin),
+            self.api.get_vehicle_location(vin),
+            self.api.get_remote_status(vin),
+            return_exceptions=True,
         )
 
-    def get_remote_operation_status(self, vin: str, correlation_id: str) -> dict:
-        """Get the status of a remote operation by its correlation ID"""
+        # Endpoints that fail with an API error are skipped and the vehicle is
+        # kept with the data that is available: not every vehicle supports
+        # every endpoint. Other errors (auth, connection) are raised.
+        for name, r in (("info", info), ("location", location), ("remote", remote)):
+            if isinstance(r, APIError):
+                level = logging.DEBUG
+                if name == "info" and vin not in self._info_unsupported:
+                    self._info_unsupported.add(vin)
+                    level = logging.WARNING
 
-        return self.api.get_remote_operation_status(vin, correlation_id)
+                _LOGGER.log(level, "%s: unable to get %s: %s", vin, name, r)
+            elif isinstance(r, BaseException):
+                raise r
 
-    def command(self, vin: str, cmd: Command):
-        """Execute a given command against a car with a given VIN"""
+        if isinstance(info, dict):
+            apply_vehicle_info(vehicle, info)
+        if isinstance(location, dict):
+            vehicle.raw_location = location
+            vehicle.location = parse_location(location)
+        if isinstance(remote, dict):
+            apply_remote_status(vehicle, remote)
 
-        return self.api.command(vin, cmd)
+        self.vehicles[vin] = vehicle
 
-    def command_verify(
+    def get_vehicles(self) -> dict[str, Vehicle]:
+        """Returns the vehicles loaded by the last :meth:`refresh`"""
+
+        return self.vehicles
+
+    async def command(self, vin: str, cmd: Command) -> str:
+        """Sends a remote command, returns the correlation ID of the operation"""
+
+        return await self.api.command(vin, cmd)
+
+    async def wait_for_operation(
         self,
         vin: str,
-        cmd: Command,
+        correlation_id: str,
+        timeout: float = 60,
+        interval: float = 2,
     ) -> bool:
-        """Execute a given command against a car with a given VIN and poll for the status"""
+        """Waits for a remote operation to finish.
 
-        id = self.command(vin, cmd)
-        return self._poll_correlation_id(vin, id)
+        Returns True if it succeeded and False if it failed. Raises
+        :class:`CommandTimeoutError` if no result is reported within
+        ``timeout`` seconds.
 
-    def get_stolen_vehicle_status(self, vin: str) -> dict:
-        """Get stolen vehicle locator (SVLA) status for a vehicle with a given VIN"""
-
-        return self.api.get_stolen_vehicle_status(vin)
-
-    def get_vehicle_subscription(self, vin: str) -> dict:
-        """Get subscription status for a vehicle with a given VIN"""
-
-        return self.api.get_vehicle_subscription(vin)
-
-    def set_vehicle_nickname(self, vin: str, nickname: str) -> dict:
-        """Set a nickname for a vehicle with a given VIN"""
-
-        return self.api.set_vehicle_nickname(vin, nickname)
-
-    def update_location(self, vin: str) -> str:
-        """Trigger a fresh location update for a vehicle with a given VIN.
-
-        Returns the correlation ID to poll for completion.
+        The result is taken from the remote operation status endpoint and, as
+        it is not available for every brand and region, from the vehicle
+        notifications.
         """
 
-        return self.api.update_location(vin)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        use_status_endpoint = True
+        last_error: Exception | None = None
 
-    def get_eco_coaching_last_trip(self, vin: str) -> dict:
-        """Get eco-coaching data for the last trip of a vehicle with a given VIN"""
+        while True:
+            await asyncio.sleep(interval)
 
-        return self.api.get_eco_coaching_last_trip(vin)
+            if use_status_endpoint:
+                try:
+                    r = await self.api.get_remote_operation_status(vin, correlation_id)
+                    if (result := _remote_operation_result(r)) is not None:
+                        return result
+                except APIError as err:
+                    last_error = err
+                    if err.status == 404:
+                        use_status_endpoint = False
 
-    def get_eco_coaching_trips(self, vin: str) -> dict:
-        """Get eco-coaching trip list for a vehicle with a given VIN"""
+            try:
+                r = await self.api.get_vehicle_notifications(vin)
+                if (result := _notification_result(r, correlation_id)) is not None:
+                    return result
+            except APIError as err:
+                last_error = err
 
-        return self.api.get_eco_coaching_trips(vin)
+            if loop.time() + interval >= deadline:
+                raise CommandTimeoutError(
+                    f"no result for operation {correlation_id} within {timeout}s"
+                    + (f" (last error: {last_error})" if last_error else "")
+                )
 
-    def get_maintenance_history(self, vin: str) -> dict:
-        """Get maintenance history for a vehicle with a given VIN"""
+    async def command_verify(
+        self, vin: str, cmd: Command, timeout: float = 60, interval: float = 2
+    ) -> bool:
+        """Sends a remote command and waits for its result, see
+        :meth:`wait_for_operation`.
+        """
 
-        return self.api.get_maintenance_history(vin)
+        cid = await self.command(vin, cmd)
+        return await self.wait_for_operation(vin, cid, timeout, interval)
 
-    def get_vehicle_health_report(self, vin: str) -> dict:
-        """Get vehicle health report for a vehicle with a given VIN"""
+    async def set_charging_level(
+        self, vin: str, level: ChargingLevel, max_soc: int | None = None
+    ) -> str:
+        """Sets the charging power preference, returns the correlation ID"""
 
-        return self.api.get_vehicle_health_report(vin)
+        return await self.api.set_charging_level(vin, level, max_soc)
 
-    def get_vehicle_image(self, vin: str) -> dict:
-        """Get vehicle image URL for a vehicle with a given VIN"""
+    async def set_charging_level_verify(
+        self,
+        vin: str,
+        level: ChargingLevel,
+        max_soc: int | None = None,
+        timeout: float = 60,
+        interval: float = 2,
+    ) -> bool:
+        """Sets the charging power preference and waits for the result"""
 
-        return self.api.get_vehicle_image(vin)
+        cid = await self.api.set_charging_level(vin, level, max_soc)
+        return await self.wait_for_operation(vin, cid, timeout, interval)
 
-    def get_charge_schedules(self, vin: str) -> dict:
-        """Get EV charge schedules for a vehicle with a given VIN"""
+    async def set_charge_schedule(self, vin: str, schedule: dict[str, Any]) -> str:
+        """Sets the EV charge schedules, returns the correlation ID"""
 
-        return self.api.get_charge_schedules(vin)
+        return await self.api.set_charge_schedule(vin, schedule)
 
-    def set_charge_schedule(self, vin: str, schedule: dict):
-        """Set an EV charge schedule on the vehicle with a given VIN"""
+    async def set_charge_schedule_verify(
+        self,
+        vin: str,
+        schedule: dict[str, Any],
+        timeout: float = 60,
+        interval: float = 2,
+    ) -> bool:
+        """Sets the EV charge schedules and waits for the result"""
 
-        return self.api.set_charge_schedule(vin, schedule)
-
-    def set_charge_schedule_verify(self, vin: str, schedule: dict) -> bool:
-        """Set an EV charge schedule and poll for the status"""
-
-        id = self.api.set_charge_schedule(vin, schedule)
-        return self._poll_correlation_id(vin, id)
-
-    def set_charging_level(
-        self, vin: str, level: ChargingLevel, max_soc: str | None = None
-    ):
-        """Set the charging level on the vehicle with a given VIN"""
-
-        return self.api.set_charging_level(vin, level, max_soc=max_soc)
-
-    def set_charging_level_verify(
-        self, vin: str, level: ChargingLevel, max_soc: str | None = None
-    ):
-        """Set the charging level on the vehicle with a given VIN and poll for the status"""
-
-        id = self.api.set_charging_level(vin, level, max_soc=max_soc)
-        return self._poll_correlation_id(vin, id)
+        cid = await self.api.set_charge_schedule(vin, schedule)
+        return await self.wait_for_operation(vin, cid, timeout, interval)
