@@ -11,7 +11,7 @@ the keys and headers of the web portal, which the API accepts as well.
 
 ## Hosts
 
-| Purpose | EMEA, APAC, LATAM | North America |
+| Purpose | EMEA, APAC | North America, LATAM |
 | --- | --- | --- |
 | Vehicle API | `https://channels.sdpr-01.fcagcv.com` | `https://channels.sdpr-02.fcagcv.com` |
 | PIN authentication (MFA) | `https://mfa.fcl-01.fcagcv.com` | `https://mfa.fcl-02.fcagcv.com` |
@@ -19,7 +19,9 @@ the keys and headers of the web portal, which the API accepts as well.
 | Cognito, AWS region | `eu-west-1` | `us-east-1` |
 
 The login (Gigya / SAP Customer Data Cloud) site and API key differ per brand
-and region, see `py_uconnect/brands.py`.
+and region, see `py_uconnect/brands.py`. The LATAM app
+(`com.fca.myconnect.latam`) is the North American app with its own login site
+(on `accounts.us1.gigya.com`), shared by all brands.
 
 ## Authentication
 

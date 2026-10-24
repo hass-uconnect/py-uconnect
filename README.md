@@ -56,13 +56,16 @@ of your account from `py_uconnect.brands` (or `BRANDS` by name):
 
 | Brand | Configurations |
 | --- | --- |
-| Fiat | `FIAT_EU`, `FIAT_US`, `FIAT_CANADA`, `FIAT_ASIA` |
-| Jeep | `JEEP_EU`, `JEEP_US`, `JEEP_ASIA` |
+| Fiat | `FIAT_EU`, `FIAT_US`, `FIAT_CANADA`, `FIAT_ASIA`, `FIAT_LATAM` |
+| Jeep | `JEEP_EU`, `JEEP_US`, `JEEP_ASIA`, `JEEP_LATAM` |
 | Alfa Romeo | `ALFA_ROMEO_EU`, `ALFA_ROMEO_US_CANADA`, `ALFA_ROMEO_ASIA` |
 | Maserati | `MASERATI_EU`, `MASERATI_US_CANADA`, `MASERATI_ASIA` |
 | Chrysler | `CHRYSLER_US`, `CHRYSLER_CANADA` |
 | Dodge | `DODGE_US` |
-| Ram | `RAM_US` |
+| Ram | `RAM_US`, `RAM_LATAM` |
+
+The `*_LATAM` configurations are for accounts of the LATAM (Brazil) app; they
+share one login site and differ only in name.
 
 ## Vehicle data
 

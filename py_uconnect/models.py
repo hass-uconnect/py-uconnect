@@ -367,12 +367,13 @@ def apply_vehicle_info(v: Vehicle, p: dict[str, Any], raw: bool = True) -> None:
         vi, "distanceToService", "distanceToService", "unit"
     )
 
-    if get_float(batt, "distanceToEmpty", "value") is not None:
-        dte = _get(batt, "distanceToEmpty")
-    else:
-        dte = _get(vi, "fuel", "distanceToEmpty")
-    v.distance_to_empty = get_float(dte, "value")
-    v.distance_to_empty_unit = get_str(dte, "unit")
+    # The battery range unless it is missing or zero, as reported by vehicles
+    # with a combustion engine (also PHEVs with an empty battery), then the
+    # fuel range. Same as 0.x, value and unit are picked independently.
+    batt_dte = _get(batt, "distanceToEmpty")
+    fuel_dte = _get(vi, "fuel", "distanceToEmpty")
+    v.distance_to_empty = get_float(batt_dte, "value") or get_float(fuel_dte, "value")
+    v.distance_to_empty_unit = get_str(batt_dte, "unit") or get_str(fuel_dte, "unit")
 
     v.range_gas = get_float(batt, "gasRange")
     v.range_gas_unit = v.distance_to_empty_unit

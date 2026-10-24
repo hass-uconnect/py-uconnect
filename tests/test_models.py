@@ -228,6 +228,36 @@ def test_vehicle_info_empty() -> None:
     assert v.timestamp_info is None
 
 
+@pytest.mark.parametrize(
+    ("battery", "fuel", "expected"),
+    [
+        # Combustion vehicles and PHEVs with an empty battery report 0
+        ({"unit": "km", "value": "0"}, {"unit": "km", "value": "410"}, (410, "km")),
+        ({"unit": "mi", "value": 0}, {"unit": "mi", "value": "255"}, (255, "mi")),
+        ({"unit": "km", "value": "0"}, {"unit": "km", "value": None}, (None, "km")),
+        ({"unit": "km", "value": None}, {"unit": "km", "value": "410"}, (410, "km")),
+        (None, {"unit": "km", "value": "410"}, (410, "km")),
+        ({"unit": "km", "value": "35"}, {"unit": "km", "value": "410"}, (35, "km")),
+        ({"unit": "km", "value": "134"}, None, (134, "km")),
+    ],
+)
+def test_distance_to_empty(
+    battery: dict | None, fuel: dict | None, expected: tuple[float | None, str]
+) -> None:
+    """The battery range unless missing or zero, then the fuel range, like 0.x"""
+
+    v = Vehicle(vin=ICE_VIN)
+    apply_vehicle_info(
+        v,
+        {
+            "vehicleInfo": {"fuel": {"distanceToEmpty": fuel}},
+            "evInfo": {"battery": {"distanceToEmpty": battery}},
+        },
+    )
+
+    assert (v.distance_to_empty, v.distance_to_empty_unit) == expected
+
+
 # Remote status and location
 
 

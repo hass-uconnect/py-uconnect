@@ -15,7 +15,7 @@ from .exceptions import (
 )
 from .models import ChargingLevel, Location, TheftAlarmSuppression, Vehicle
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 
 __all__ = [
     "API",

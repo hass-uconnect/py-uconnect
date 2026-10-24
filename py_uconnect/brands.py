@@ -2,18 +2,21 @@
 
 Each brand/region combination of the official apps uses its own Gigya (SAP
 Customer Data Cloud) login site and API key, while the vehicle API itself is
-shared per region (EMEA/APAC/LATAM vs. North America).
+shared per region: EMEA and APAC use the European one, North America and LATAM
+the North American one. In LATAM a single app, with a single login site, serves
+all brands.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 REGION_EU = "eu-west-1"
 REGION_US = "us-east-1"
 
 LOCALE_EU = "de_de"
 LOCALE_US = "en_us"
+LOCALE_LATAM = "pt_br"
 
 TOKEN_URL_EU = "https://authz.sdpr-01.fcagcv.com/v2/cognito/identity/token"
 TOKEN_URL_US = "https://authz.sdpr-02.fcagcv.com/v2/cognito/identity/token"
@@ -282,6 +285,23 @@ RAM_US = Brand(
     brand_code="ALL",
 )
 
+# The LATAM app (com.fca.myconnect.latam) is the North American app with its
+# own login site, shared by all brands
+JEEP_LATAM = Brand(
+    name="JEEP_LATAM",
+    region=REGION_US,
+    login_api_key="3_wY5XajJbqLyuwU33MQI7R6hMa4TuUk5jSZBweZH38Z15u_e16bqSEbi2nRt1tOY1",
+    login_url="https://accounts.us1.gigya.com",
+    token_url=TOKEN_URL_US,
+    api=API_US,
+    mfa=MFA_US,
+    locale=LOCALE_LATAM,
+    brand_code="ALL",
+)
+
+FIAT_LATAM = replace(JEEP_LATAM, name="FIAT_LATAM")
+RAM_LATAM = replace(JEEP_LATAM, name="RAM_LATAM")
+
 BRANDS: dict[str, Brand] = {
     FIAT_EU.name: FIAT_EU,
     FIAT_US.name: FIAT_US,
@@ -300,4 +320,7 @@ BRANDS: dict[str, Brand] = {
     MASERATI_ASIA.name: MASERATI_ASIA,
     MASERATI_EU.name: MASERATI_EU,
     MASERATI_US_CANADA.name: MASERATI_US_CANADA,
+    JEEP_LATAM.name: JEEP_LATAM,
+    FIAT_LATAM.name: FIAT_LATAM,
+    RAM_LATAM.name: RAM_LATAM,
 }
