@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2
+
+### Fixed
+
+- `Vehicle.distance_to_empty` is the fuel range again when the battery range
+  is zero, as reported by vehicles with a combustion engine and by plug-in
+  hybrids with an empty battery. 1.0.0 reported 0 for them.
+
 ## 1.0.0
 
 A rewrite of the library as an asyncio client. It is not backwards compatible,
