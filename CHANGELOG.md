@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Login with the EU and Asia brands fails with `INVALID_TOKEN` at the Cognito
+  token exchange: the `x-api-key` of the `sdpr-01` gateway (`API_EU`) was
+  rotated, the library uses the new one from the web portal.
+
 ## 1.0.2
 
 ### Added
